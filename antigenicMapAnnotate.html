@@ -1,0 +1,137 @@
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    
+    <script src="js/raphael.js"></script>
+    <script src="js/jquery-1.10.2.js"></script>
+    <script src="js/antigenicMap_v0_2.js"></script>
+    <script src="js/g.dot-min.js"></script>
+    <script src="js/canvg.js"></script>
+    <script src="js/canvas2image.js"></script>
+    <script src="js/raphael.export.js"></script>
+	
+	
+
+    <style media="screen">
+    #drawing_board {
+        height: 300px;
+        width: 700px;
+        border:1px solid #000000;
+    }
+	
+	
+	button, input[type=submit]{
+		background-color: #0074CC;
+		background-image: linear-gradient(top, #08C, #05C);
+		border-color: rgba(0,0,0,0.1) rgba(0,0,0,0.1) rgba(0,0,0,0.25);
+		text-shadow: 0 -1px 0 rgba(0,0,0,0.25);
+		color:white;
+	}
+	
+	body
+	{
+		background-color:#FFFFFF;
+	}
+	
+    </style>
+
+    <script>
+
+	   	
+    $(document).ready(function(){
+		
+	
+		
+    });
+	
+//http://stackoverflow.com/questions/2483919/how-to-save-svg-canvas-to-local-filesystem
+	
+	
+    </script>
+	<title>Antigenic Map Annotator</title>
+</head>
+<body>
+
+
+
+
+  <div id="page-wrapper">
+
+    <h1>Visualization tool for antigenic cartography </h1>
+	<!--<h3>Copyrighted 2014 
+	<h4>by <a href="http://charlescheung-statgen.com">Charles Y K Cheung</a>, PhD @ <a href="http://bedford.io/blog/">Trevor Bedford's lab</a></h4>-->
+    
+
+<div id="drawing_board"></div>
+A demo is loaded. <br> 
+
+<h3>Tools:
+<a href="#" onclick="document.getElementById('Tools').style.display = 'none'; return false;">[hide]</a> 
+<a href="#" onclick="document.getElementById('Tools').style.display = 'block'; return false;">[show]</a> 
+</h3>
+<div id="Tools">
+<button id="createImage" onclick="createSVGNewWindow()">Create SVG Image in a new window</button>  *Compatible with Firefox and Google Chrome
+<br>
+<button id="changeRadius_button" onclick="changeRadiusFunction()">Change size of the points</button>
+</div>
+
+
+<h3>Labeling Points:
+<a href="#" onclick="document.getElementById('container').style.display = 'none'; return false;">[hide]</a> 
+<a href="#" onclick="document.getElementById('container').style.display = 'block'; return false;">[show]</a> 
+</h3>
+<div id = "container" style="width:800px">
+ <div id="barSera" style="float:left; width:400px;"></div>
+ <div id="bar" style="float:left; width:400px;"></div>
+</div>
+
+
+
+<div style="clear:left;">
+<h3>Calculating Antigenic Distance:
+<a href="#" onclick="document.getElementById('container4').style.display = 'none'; return false;">[hide]</a> 
+<a href="#" onclick="document.getElementById('container4').style.display = 'block'; return false;">[show]</a> 
+</h3>
+
+<div id ="container4" style="width:800px; clear:left;">
+ <div id="distance_serum" style="float:left; width:400px;"></div>
+ <div id="distance_virus" style="float:left; width:400px;"></div>
+   "The spacing between grid lines is one unit of antigenic distance, corresponding to a 2-fold dilution of antiserum in the HI assay." (Use of Antigenic Cartography in Vaccine Seed Strain Selection" by Fouchier and Smith.)
+</div>
+</div>
+
+
+<div style="clear:left;">
+<h3>Summarizing Map Locations:
+<a href="#" onclick="document.getElementById('MCMC_container').style.display = 'none'; return false;">[hide]</a> 
+<a href="#" onclick="document.getElementById('MCMC_container').style.display = 'block'; return false;">[show]</a> 
+</h3>
+<div id = "MCMC_container" style="width:800px">
+<button id="MCMC median" onclick="MCMC_median()">Display the median of the MCMC samples (did I do something wrong?)</button>
+<div id="MCMC" style="width:800px;"></div>
+</div>
+</div>
+
+
+
+
+<div>
+      (not working now) Select an antigenic map file: 
+      <input type="file" id="fileInput">
+    </div>
+    <p id ="fileDisplayAreaLegend"></p> 
+    <pre id="fileDisplayArea"></pre>
+	
+
+  </div>
+
+
+Copyright: Charles Cheung @ Trevor Bedford's lab.  
+
+
+</body>
+</html>
+
+
+
+
