@@ -368,7 +368,9 @@ var two_y = null;
 var two_ori_x = null;
 var two_ori_y = null;
 function selectPointSerumD(){
+		
  var ID = this.selectedIndex;
+ 
  two_x = squareSera[ID].attr('x') + radius;
  two_y = squareSera[ID].attr('y') + radius;
  
@@ -448,21 +450,22 @@ if (text[ID] == null) {
 
 
 function selectPointSera(){
+	
 //alert(this.id + " - " + this.selectedIndex);
 //    var circle = paper.circle(320, 240, 90).attr({ fill: '#3D6AA2', stroke: '#000000', 'stroke-width': 8 });
  
  var ID = this.selectedIndex;
-if (textSera[ID] == null) {
+ if (textSera[ID] == null) {
 
 	//to highlight, I also want to redraw the dot...
 	//circle[ID].hide();
 	var cir_x = squareSera[ID].attr('x');
+
 	var cir_y = squareSera[ID].attr('y');
 	var cir_r = squareSera[ID].attr('width');	
-	var cir_opa = circle[ID].attr("fill-opacity");
-	var cir_title = circle[ID].attr("title");
-	
-	
+	var cir_opa = squareSera[ID].attr("fill-opacity");
+	var cir_title = squareSera[ID].attr("title");
+
 	var anim = Raphael.animation({x:cir_x-cir_r*3/2, y:cir_y-cir_r*3/2, width: cir_r*3, height: cir_r*3, "fill-opacity":0.25}, 300);
 	squareSera[ID].animate(anim);
 	var anim2 = Raphael.animation({x:cir_x, y:cir_y, width: cir_r, height:cir_r, "fill-opacity":cir_opa}, 600);
@@ -477,7 +480,6 @@ if (textSera[ID] == null) {
 	textSera[ID].dblclick(promptRename);
 	//
 }
-
 
 
 
@@ -530,6 +532,7 @@ if(virusLoaded){
 }
 
 
+	
 if(serumLoaded){
 //assume the first column matches
 //sera
@@ -540,23 +543,45 @@ if(serumLoaded){
       x_coord[i] =  Number(seraData[dataRow][2*i+1]);
 	  y_coord[i] =  Number(seraData[dataRow][2*i+2]);
     }
- 	
+
+
 //add offset for now
 for(var i=0; i<numSera; i++){
  x_coord[i] = x_off + x_coord[i];
  y_coord[i] = y_off + y_coord[i];	
 }
 
+//update sera presence
+for(var i=0; i < numSera; i++){
+if(isNaN(x_coord[i]) || isNaN(y_coord[i])){
+	isSerumNaN[i] = 1;
+}
+else{
+	isSerumNaN[i] = 0;
+}
+}
 
-	for(var ID=0; ID < numSera; ID++){
-	  var xpos = x_offset +x_coord[ID]*spreadFactor - radius;
-	  var ypos =  plotHeight - y_offset - y_coord[ID]*spreadFactor - radius;
-	 //var anim = Raphael.animation({cx:100 , cy:100 }, 300);
-	 var anim = Raphael.animation({x:xpos , y:ypos }, 300);
-	 squareSera[ID].animate(anim);
+
+    for (var i = 0; i < numSera; i++) {
+    	if(isSerumNaN[i]){
+		  squareSera[i].hide();
+		  }
+		  else{
+		  	squareSera[i].show();
+		  }
 	}
 
 	for(var ID=0; ID < numSera; ID++){
+
+	  var xpos = x_offset +x_coord[ID]*spreadFactor - radius;
+	  var ypos =  plotHeight - y_offset - y_coord[ID]*spreadFactor - radius;
+	  
+	  
+	 //var anim = Raphael.animation({cx:100 , cy:100 }, 300);
+	 var anim = Raphael.animation({x:xpos , y:ypos }, 300);
+	 
+	 squareSera[ID].animate(anim);
+
 	 if (textSera[ID] != null) {
 		var xpos = x_offset + x_coord[ID] * spreadFactor;
 		var ypos = plotHeight - y_offset - y_coord[ID] * spreadFactor;
@@ -565,7 +590,10 @@ for(var i=0; i<numSera; i++){
 			y: ypos -5
 		}, 300);
 		textSera[ID].animate(anim);
-	 }		
+	 }
+
+	 	
+	 	 		
 	}
 }//serum laoded
 
@@ -749,7 +777,8 @@ var seraData;
 
 var x_serum;
 var y_serum;
-	
+
+var isSerumNaN;
 	
 function addSera(dataStr, readDataType){
 	
@@ -759,6 +788,7 @@ function addSera(dataStr, readDataType){
 	 numSera = (seraData[0].length -1)/2;
 	// alert(numSera);
 	//alert(numViruses);
+
 
 
 	
@@ -827,16 +857,38 @@ squareSera = new Array(numSera);
 textSera = new Array(numSera);
 CI_pairwise_legend = new Array(numSera);
 
+isSerumNaN = new Array(numSera);
+
+for(var i=0; i < numSera; i++){
+	if(isNaN(x_coord[i]) || isNaN(y_coord[i])){
+	  isSerumNaN[i] = 1;
+	 }
+	 else{
+	 	isSerumNaN[i] = 0;
+	 }
+}
+
 var opacityFirst = 0.4;
 var opacityLast = 1;
 for(var i=0; i< numSera; i++){
+	
   //var opacityValue = (opacityLast - opacityFirst)*i/numViruses + opacityFirst;
   //opacity value set to 0
+ 
   var xpos_begin = x_offset +x_coord[i]*spreadFactor  - radius;  //the begin x
   var ypos_begin =  plotHeight - y_offset - y_coord[i]*spreadFactor -radius; //the begin y
-  //squareSera[i] = paper.circle(xpos, ypos, radius+2).attr({ stroke: '#660066', fill: '#FFFFFF', 'stroke-width': 2, title:i , "fill-opacity": 1});
+
+	if(isSerumNaN[i]){
+	 xpos_begin = 0;
+	 ypos_begin = 0;	
+	}
+
+   //squareSera[i] = paper.circle(xpos, ypos, radius+2).attr({ stroke: '#660066', fill: '#FFFFFF', 'stroke-width': 2, title:i , "fill-opacity": 1});
   squareSera[i] = paper.rect(xpos_begin, ypos_begin, radius*2, radius*2).attr({ stroke: '#660066', fill: '#FFFFFF', 'stroke-width': 2, title:i , "fill-opacity": 1});  
  
+ 	if(isSerumNaN[i]){
+ 		squareSera[i].hide();
+ 	}
  //  //squareSera[i] = paper.circle(x_offset + Math.floor(x_coord[i]*spreadFactor), y_offset+(370-Math.floor(y_coord[i]*spreadFactor)), radius).attr({ stroke: '#3D6AA2', fill: '#0066FF', 'stroke-width': 2 });	
   ////  var dot = paper.circle(x_offset + Math.floor(x_coord[i]), y_offset+Math.floor(y_coord[i]), radius).attr({ fill: '#3D6AA2', stroke: '#000000', 'stroke-width': 8 });	
 }
@@ -851,7 +903,8 @@ for(var i=0; i < numSera; i++){
 
 
 for (var i = 0; i < numSera; i++) {
-	squareSera[i].click(function(){
+ 
+ 	squareSera[i].click(function(){
 		this.attr({fill: '#FF0000'});
 		this.toFront();
 		//text.attr({text:dynamicText, x:280});
@@ -972,9 +1025,8 @@ for (var i = 0; i < numSera; i++) {
 	);
 		
 	
-
-}
-
+  
+} //sera
 
 
 //alert(numSera);
@@ -989,6 +1041,7 @@ for (var i = 0; i < numSera; i++) {
 	newSelectSera.onchange = selectPointSera;
 	//newSelect[newSelect.length] = new Option("One", "1", false, false); // add new option
 	//newSelect[newSelect.length] = new Option("Two", "2", false, false); // add new option
+
 	for(var i=0; i < numSera; i++){
 		newSelectSera[newSelectSera.length] = new Option(serumName[i],i, false, false);
 	}
