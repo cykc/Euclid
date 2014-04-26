@@ -4,7 +4,8 @@
     
     <script src="js/raphael.js"></script>
     <script src="js/jquery-1.10.2.js"></script>
-    <script src="js/antigenicMap_v0_62.js"></script>
+    <script src="js/antigenicMap_v0_63.js"></script>
+    <script src="js/raphael.pan-zoom.min.js"></script>
     <script src="js/g.dot-min.js"></script>
     <script src="js/canvg.js"></script>
     <script src="js/canvas2image.js"></script>
@@ -104,6 +105,16 @@
 	<br>
       Load serum coordinates:<br>
       <input type="file" id="serum_fileInput">
+    <br>
+      Load serum potency:<br>
+      <input type="file" id="serumPotency_fileInput">
+    <br> 
+        Load virus avidity:<br>
+      <input type="file" id="virusAvidity_fileInput">  
+      
+    <br> 
+        Load MDS log file:<br>
+      <input type="file" id="mds_log_fileInput">     
 </div>
 </div>
 
@@ -126,10 +137,20 @@
 <a href="#" onclick="document.getElementById('Tools').style.display = 'block'; return false;">[show]</a> 
 </h3>
 <div id="Tools">
-<button id="createImage" onclick="createSVGNewWindow()" title="Compatible with Firefox and Google Chrome">Create SVG Image in a new window</button>  
+   <input id="chk_pan" type="checkbox" name="pan" value="pan" onclick="panOption()">Enable zoom in, zoom out, and panning
+   <br>
+   <button id="button_Zoomin" onclick="ZoomIn()" style="background-color:#B2CBE6"}>Zoom in</button>
+   <button id="button_Zoomout" onclick="ZoomOut()" style="background-color:#B2CBE6">Zoom out</button>
 <br>
 <button id="changeRadius_button" onclick="changeRadiusFunction()">Change size of the points</button>
+<button id="changeText_button" onclick="changeTextSizeFunction()">Set size of new labels</button>
+
+   <br>
+<button id="createImage" onclick="createSVGNewWindow()" title="Compatible with Firefox and Google Chrome">Create SVG Image in a new window</button>  
+
+
 </div>
+
 
 
 <div style="clear:left;">
@@ -138,9 +159,10 @@
 <a href="#" onclick="document.getElementById('MCMC_container').style.display = 'block'; return false;">[show]</a> 
 </h3>
 <div id = "MCMC_container" style="width:800px">
-
-<div id="MCMC" style="width:800px;"></div>
+   <button id="Maximum Posterior" onclick="MCMC_MaxPosterior()">Display the MCMC sample showing the maximum posterior</button>
 </div>
+<div id="MCMC" style="width:800px;"></div>
+
 </div>
 
 
