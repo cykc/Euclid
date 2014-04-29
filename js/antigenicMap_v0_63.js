@@ -10,10 +10,10 @@
  *   option to read only the first few lines
  * 
  * need to fix:
- *   - text too large after zooming in
- *   - when trying to move the text labe by scrolling, the panning also occurs.. need a way to disable panning
+ *   - text too large after zooming in  [now have option to select text size]
+ *   - when trying to move the text labe by scrolling, the panning also occurs.. need a way to disable panning [now have option to disable panning]
  *  
- * 
+ *   - scroll on picture also does the zoom in and out..   it doesn't go through the zoomLevel routine that sync up with the zoom in and out button states.
  * 
  * v0.63
  *  zoom in/out
@@ -386,6 +386,8 @@ function selectPointD(){
  //draw a line:
 }
 
+
+
 var two_x = null;
 var two_y = null;
 var two_ori_x = null;
@@ -620,26 +622,46 @@ else{
 }
 
 
+var zoomLevel = 0;
 
 function ZoomIn(){
-	            if(panZoom.getCurrentZoom()<9){
+				if( zoomLevel <9){
+	            //if(panZoom.getCurrentZoom()<9){
                 panZoom.zoomIn(1);
                 console.log('current zoom after zoom in : '+panZoom.getCurrentZoom());
-                //zoomLevel++;
-                rows_or_sections_display();
+                zoomLevel++;
+                //rows_or_sections_display();
             }
+            
+            if(zoomLevel == 9){
+           		document.getElementById("button_Zoomin").style.background='#B2CBE6'; 
+           	}
+           	
+           	if(zoomLevel > 0){
+           		document.getElementById("button_Zoomout").style.background='#0074CC'; 
+           	}
+           	
+            
 	//paper.setViewBox(200, 200, 400, 400, false);
 
 }
 
 function ZoomOut(){
-            if(panZoom.getCurrentZoom()>0){
+	 if( zoomLevel>0){
+           // if(panZoom.getCurrentZoom()>0){
                 panZoom.zoomOut(1);
                 console.log('current zoom after zoom out : '+panZoom.getCurrentZoom());
                 event.preventDefault();
-                //zoomLevel--;
-                rows_or_sections_display();
+                zoomLevel--;
+                //rows_or_sections_display();
             }
+            
+      if(zoomLevel < 9){
+			document.getElementById("button_Zoomin").style.background='#0074CC';
+      }
+      if(zoomLevel ==0){
+			document.getElementById("button_Zoomout").style.background='#B2CBE6';
+      }      
 }
 
 function MCMCselectPoint(){
@@ -1402,7 +1424,11 @@ function panOption(){
 		panZoom.enable();
 		document.getElementById("button_Zoomin").style.background='#0074CC'; 
 		document.getElementById("button_Zoomout").style.background='#0074CC';  // doesn't work.'
-
+		
+		    if(zoomLevel == 9){  document.getElementById("button_Zoomin").style.background='#B2CBE6'; }      	
+           	if(zoomLevel > 0){	document.getElementById("button_Zoomout").style.background='#0074CC'; }
+      		if(zoomLevel < 9){ document.getElementById("button_Zoomin").style.background='#0074CC';}
+      		if(zoomLevel ==0){	document.getElementById("button_Zoomout").style.background='#B2CBE6';}      	                    	
 	}	
 } 
  
