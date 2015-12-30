@@ -104,6 +104,16 @@
 	<br>
       Load serum coordinates:<br>
       <input type="file" id="serum_fileInput">
+    <br>
+      Load serum potency:<br>
+      <input type="file" id="serumPotency_fileInput">
+    <br> 
+        Load virus avidity:<br>
+      <input type="file" id="virusAvidity_fileInput">  
+      
+    <br> 
+        Load MDS log file:<br>
+      <input type="file" id="mds_log_fileInput">     
 </div>
 </div>
 
@@ -138,7 +148,7 @@
 <a href="#" onclick="document.getElementById('MCMC_container').style.display = 'block'; return false;">[show]</a> 
 </h3>
 <div id = "MCMC_container" style="width:800px">
-
+   <button id="Maximum Posterior" onclick="MCMC_MaxPosterior()">Display the MCMC sample showing the maximum posterior</button>
 <div id="MCMC" style="width:800px;"></div>
 </div>
 </div>

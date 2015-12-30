@@ -6,6 +6,36 @@
 /*
  * Change Log
  * 
+ * 
+ * 
+ * future:
+ *   option to read only the first few lines
+ * 
+ * need to fix:
+ *   - text too large after zooming in  [now have option to select text size]
+ *   - when trying to move the text labe by scrolling, the panning also occurs.. need a way to disable panning [now have option to disable panning]
+ *  
+ *   - scroll on picture also does the zoom in and out..   it doesn't go through the zoomLevel routine that sync up with the zoom in and out button states.
+ * 
+ * v0.65 - load in cluster assignments for Gabriela's model
+ *	- fixed a bug that prevented loading virus location when Rotate is off.. the bug was that when rotate is unchecked, a part of the code that would be run
+ * 	  inside isRotate would not be run, such that the   currentSample = numSamples - 1;  was not assigned if rotate is unchecked
+ * 			-moved the line  currentSample = numSamples - 1 such that it is not inside the if condition 
+ * 
+ * v0.63
+ *  zoom in/out
+ *  add a check box option to enable and disable zoom in/out/ and panning, mainly so that if I have labeld some points and want to move them around, panning would interfere with this activity, so I want to have an option to disable panning
+ *  add option to change label size
+ *  label virus by color (red) if the virus is not annotated
+ *  bug fix - in add_cluster_color, it adds color from i=0 to numSamples.. it should be numViruses.
+ * 
+ * 
+ * 
+ * v0.62 vs. v0.61
+ *  add the sera potency
+ *  add the maximum posterior
+ *  add an experimental feature in neighborhood 
+ * 
  * v0.61 vs. v0.60  : integrate the sera..
  *   To do:
  * 		- load data - that omit lines starting with # and omit blank lines
@@ -363,21 +393,19 @@ function selectPointD(){
  //draw a line:
 }
 
+
+
 var two_x = null;
 var two_y = null;
 var two_ori_x = null;
 var two_ori_y = null;
 function selectPointSerumD(){
-		
  var ID = this.selectedIndex;
- 
  two_x = squareSera[ID].attr('x') + radius;
  two_y = squareSera[ID].attr('y') + radius;
- 
  two_ori_x = x_serum[ID];
  two_ori_y = y_serum[ID];
- 
- 
+
  var neighborhood_radius = 1;
  
  var drawCircle = paper.circle(two_x, two_y, 1*spreadFactor).attr({ fill: '#FF0000', stroke: '#FF0000', 'stroke-width': 0 , opacity:0.2});
@@ -434,9 +462,12 @@ if (text[ID] == null) {
 	circle[ID].animate(anim2.delay(300));
 
 	circle[ID].toFront();
-	//circle[ID].attr({fill: '#FF0000'});//don't change the color to read
+	
+	if(isCircleColorAnnotated ==0){
+	circle[ID].attr({fill: AnnotationColor});//don't change the color to read
+	}
  	//text[ID] = paper.text(cir_x - 5, cir_y - 10, data[0][1 + 2 * cir_title] ).attr({'font-size': 12,fill: '#003300', cursor: 'pointer'});
- 	text[ID] = paper.text(cir_x - 5, cir_y - 10, virusName[cir_title] ).attr({'font-size': 12,fill: '#003300', cursor: 'pointer'});
+ 	text[ID] = paper.text(cir_x - 5, cir_y - 10, virusName[cir_title] ).attr({'font-size': textSizeLabel,fill: '#003300', cursor: 'pointer'});
 	text[ID].drag(move, start, up);
 	text[ID].dblclick(promptRename);
 	//
@@ -475,7 +506,7 @@ function selectPointSera(){
 	squareSera[ID].attr({fill: '#FF0000'});
 
  	//textSera[ID] = paper.text(cir_x - 5, cir_y - 5, seraData[0][1 + 2 * cir_title] ).attr({'font-size': 12,fill: '#003300', cursor: 'pointer'});
- 	textSera[ID] = paper.text(cir_x - 5, cir_y - 5, serumName[cir_title] ).attr({'font-size': 12,fill: '#003300', cursor: 'pointer'});
+ 	textSera[ID] = paper.text(cir_x - 5, cir_y - 5, serumName[cir_title] ).attr({'font-size': textSizeLabel,fill: '#003300', cursor: 'pointer'});
 	textSera[ID].drag(move, start, up);
 	textSera[ID].dblclick(promptRename);
 	//
@@ -486,10 +517,8 @@ function selectPointSera(){
 }
 
 
-
-function MCMCselectPoint(){
-	 
- 	var dataRow = this.selectedIndex +1;
+function selectPointCurrentSample(cSample){
+	var dataRow = cSample +1;
 //	alert(dataRow);
 	
 	//code to update the plot  (new coordinates and text attached to it)
@@ -528,6 +557,8 @@ if(virusLoaded){
 		text[ID].animate(anim);
 	 }		
 	}
+
+ 
 
 }
 
@@ -597,7 +628,75 @@ else{
 	}
 }//serum laoded
 
+if(load_ddCRPLog){
+ for(var c=0; c< numViruses; c++){
+ 	circle[c].toFront();
+ 	circle[c].attr({stroke: colorClusterStroke[ parseInt(ddCRPLogData[dataRow][c+2])], fill: colorCluster[ parseInt(ddCRPLogData[dataRow][c+2])]});
+ }
+}
+
+
+
+}
+
+
+var zoomLevel = 0;
+
+function ZoomIn(){
+				if( zoomLevel <9){
+	            //if(panZoom.getCurrentZoom()<9){
+                panZoom.zoomIn(1);
+                console.log('current zoom after zoom in : '+panZoom.getCurrentZoom());
+                zoomLevel++;
+                //rows_or_sections_display();
+            }
+            
+            if(zoomLevel == 9){
+           		document.getElementById("button_Zoomin").style.background='#B2CBE6'; 
+           	}
+           	
+           	if(zoomLevel > 0){
+           		document.getElementById("button_Zoomout").style.background='#0074CC'; 
+           	}
+           	
+            
+	//paper.setViewBox(200, 200, 400, 400, false);
+
+}
+
+function ZoomOut(){
+	 if( zoomLevel>0){
+           // if(panZoom.getCurrentZoom()>0){
+                panZoom.zoomOut(1);
+                console.log('current zoom after zoom out : '+panZoom.getCurrentZoom());
+                event.preventDefault();
+                zoomLevel--;
+                //rows_or_sections_display();
+            }
+            
+      if(zoomLevel < 9){
+			document.getElementById("button_Zoomin").style.background='#0074CC';
+      }
+      if(zoomLevel ==0){
+			document.getElementById("button_Zoomout").style.background='#B2CBE6';
+      }      
+}
+
+function MCMCselectPoint(){
+	currentSample = this.selectedIndex;
+	 selectPointCurrentSample(currentSample);	
 	
+}
+
+function MCMC_MaxPosterior(){
+	if(loadedMdsLog && virusLoaded){
+		alert("Sample: " +  MdsLogData[maxSampleIndex+1][0] +" has the maximum posterior.");
+		 currentSample = maxSampleIndex;
+  		 selectPointCurrentSample(currentSample);	
+	}
+	else{
+		alert("At least one of the virus location and the MDS log files are not loaded yet");
+	}
 }
 
 
@@ -705,7 +804,7 @@ function MCMC_median(){
 }
 
 
-
+var isCircleColorAnnotated = 0;
 var virusLoaded = 0;
 var serumLoaded = 0;
 //global objects
@@ -715,7 +814,7 @@ var newVariationCircle;
 var newVariationCircleIsTriggered;
 var text;
 var data;
-var radius = 8;
+var radius = 5;
 var numViruses;
 var CI_pairwise;
 var CI_pairwise_legend;
@@ -732,11 +831,19 @@ var x_off;
 var y_off;
 
 
+var noAnnotationColor = "#FFFFFF";
+var AnnotationColor = "#FF0000";
+
 function changeRadiusFunction(){
 	
 	
 	var old_r = Number(radius);
   	var new_r=prompt("Change radius of the points to # pixels? (e.g. 5)");
+
+	if(isNaN(new_r) || new_r <= 0){
+		alert("You didn't enter the radius. Radius reset to 5.");
+		new_r = 5;
+	}
 	
 	
 	radius = Number(new_r);
@@ -767,6 +874,22 @@ function changeRadiusFunction(){
 	
 
 }
+
+
+function changeTextSizeFunction(){
+	
+  	var new_size=prompt("Change radius of the points to # pixels? (e.g. 10)");
+	textSizeLabel = Number(new_size);
+		
+	if(isNaN(textSizeLabel) || textSizeLabel <= 0){
+		alert("You didn't enter the text size. Text size reset to 12.");
+		textSizeLabel = 12;
+	}
+}
+
+
+
+
 
 var serumName;
 
@@ -838,8 +961,8 @@ if(isRotate){
 	var y_coord = new Array(numSera);
 	
     for (var i = 0; i < numSera; i++) {
-      x_coord[i] =  Number(seraData[data.length-1][2*i+1]);
-	  y_coord[i] =  Number(seraData[data.length-1][2*i+2]);
+      x_coord[i] =  Number(seraData[currentSample+1][2*i+1]);
+	  y_coord[i] =  Number(seraData[currentSample+1][2*i+2]);
     }
  	
 	x_serum = x_coord;
@@ -914,7 +1037,7 @@ for (var i = 0; i < numSera; i++) {
 		//alert(objectID);
 		 if(textSera[objectID]==null){
 			//textSera[objectID] = paper.text(this.attr('x')-5, this.attr('y')-5, seraData[0][1+2*this.attr('title')]).attr({			'font-size': 12,			fill: '#003300', cursor: 'pointer'	});
-			textSera[objectID] = paper.text(this.attr('x')-5, this.attr('y')-5, serumName[this.attr('title')]).attr({			'font-size': 12,			fill: '#003300', cursor: 'pointer'	});
+			textSera[objectID] = paper.text(this.attr('x')-5, this.attr('y')-5, serumName[this.attr('title')]).attr({			'font-size': textSizeLabel,			fill: '#003300', cursor: 'pointer'	});
 			//originally move start up functions declared here
             textSera[objectID].drag(move, start, up);
 			//originally promptRename declared here
@@ -1003,10 +1126,45 @@ for (var i = 0; i < numSera; i++) {
 				var distStr =  dist.toPrecision(3) + " ["+ quantile(pairwiseDistance, 0.1).toPrecision(3) + ", " + quantile(pairwiseDistance, 0.9).toPrecision(3) + "]";
 				CI_pairwise_legend[curObject] = paper.text(x_0_9, y_0_9,distStr ).attr({'font-size': 10,fill:'#000000', cursor: 'pointer'});
 				CI_pairwise_legend[curObject].toFront();
-			  }
+			  } 
+			  
+			  
 			}//curObject iteration
 
 		}
+		
+	
+		
+		if(loadedSerumPotency && loadedVirusAvidity){
+		if(newVariationCircleIsTriggered[objectID] == 0){
+		//print the distribution of values..
+		if(readDataType ==1){
+			var x_data = new Array(numSamples);
+			var y_data = new Array(numSamples);
+
+	 	   var curCircle_x = this.attr('x') + radius;
+	 	   var curCircle_y = this.attr('y') + radius; 
+	 	   var curCircle_color = this.attr('fill');
+	 	   var curStrokeWidth = 0;
+	 	   if(curCircle_color == "#FFFFFF"){
+	 	   	curStrokeWidth = 1;
+	 	   }
+	 	   
+	 	   //alert(Number(serumPotencyData[currentSample+1][1 + objectID]) );
+	 	   var delta = Number(serumPotencyData[currentSample+1][1 + objectID]) - 6.32; //radius at 80
+	 	   //alert(delta);
+	 	   //alert(delta);
+	 	   if(delta > 0){
+		 	newVariationCircle[objectID] = paper.circle(curCircle_x, curCircle_y, spreadFactor*delta).attr({ stroke: '#3D6AA2', fill: curCircle_color, 'stroke-width':curStrokeWidth, title:i , "fill-opacity":0.1});
+	 	  	newVariationCircle[objectID].toBack();
+		  	newVariationCircleIsTriggered[objectID] = 1;
+			}//if delta>0
+	 	  } //readDataType
+  		 //alert(dist_80); 
+ 		} //newVariationCirclesIsTriggered
+		
+		}//loaded serum potency
+				
 		
 	},
 	function(){
@@ -1020,6 +1178,11 @@ for (var i = 0; i < numSera; i++) {
 			  CI_pairwise_legend[curObject] = null;
 			 }
 		}
+		
+		//var objectID = Number(this.attr('title'));
+		  newVariationCircle[objectID].hide();
+		  newVariationCircle[objectID] = null;
+		  newVariationCircleIsTriggered[objectID] = 0;	
 	
 	}
 	);
@@ -1073,6 +1236,119 @@ var newSelectSeraD = document.createElement('select');
 
 } //end function
 
+//Vietnamnese data analysis
+//var colorCluster = new Array("#171E24","#3A7295", "#0B5A9F", "#ED68C5","#C02900", "#7FAD6C", "#025A1E", "#1D7332", "#329135", 
+//"#F77565", "#CB301C", "#841410", "#BC1711", "#B0B02E", "#6C5BC5", "#306877", "#F95A23", "#83AE69");
+
+
+//var colorClusterStroke = new Array("#33FF00", "#666600", "#663300", "#FF0000", "#FF9900", "#FFFF00", "#3300CC", "#3399CC", "#6633CC", "#FF33CC", "#FFCCCC", "#0000CC", "#00CCCC", "#9933CC", "#CCFFFF", "#CCFF99", "#330000" , "#336600" );
+var colorClusterStroke = new Array("#336633", "#663333", "#FF3366", "#FF6666", "#FF9933", "#333333", "#339933", "#663333", "#FF3333", "#FFCC33", "#000033", "#00CC33", "#993333", "#CCFF33", "#CCFF00", "#330099" , "#336699" );
+//var colorCluster = new Array("#33FFFF", "#6666FF", "#6633FF", "#FF00FF", "#FF99FF", "#FFFFFF", "#330033", "#339933", "#663333", "#FF3333", "#FFCC33", "#000033", "#00CC33", "#993333", "#CCFF33", "#CCFF00", "#330099" , "#336699" );
+var colorCluster = new Array("#33FF00", "#666600",  "#FF0000", "#FF9900", "#FFFF00", "#3300CC", "#3399CC", "#6633CC", "#FF33CC", "#FFCCCC", "#0000CC", "#00CCCC", "#9933CC", "#CCFFFF", "#CCFF99", "#330000" , "#336600" );
+
+
+var loadedSerumPotency = 0;
+var loadedVirusAvidity = 1;
+
+
+var loadedMdsLog = 0;
+
+var MdsLogData;
+var maxSampleIndex;
+
+function readMdsLog(MdsLog_str){
+	loadedMdsLog = 1;
+	MdsLogData = CSVToArray( MdsLog_str , "\t");
+	var numSamplesThisFile = MdsLogData.length - 1;
+
+	if(isNaN(numSamples)){
+		numSamples = numSamplesThisFile;
+	}	
+	else{
+		if(numSamplesThisFile != numSamples){
+			alert("Error. The number of samples was previously specified to be "+ numSamples + ", but this files likely contains " + numSamplesThisFile + " samples.\n");
+		}
+	}
+	//the second column is the posterior
+	//get the maximum posterior:
+	maxSampleIndex=0;
+	var maxScore = Number(MdsLogData[0+1][1]);
+	for(var i=0; i < numSamples; i++){
+		if(maxScore < Number(MdsLogData[i+1][1]) ){
+			maxScore = Number(MdsLogData[i+1][1]);
+			maxSampleIndex = i;
+		}
+	}
+	
+}
+
+
+var load_ddCRPLog = 0;
+var ddCRPLogData;
+function read_ddCRP_log(ddCRPLog_str){
+	load_ddCRPLog = 1;
+	ddCRPLogData = CSVToArray( ddCRPLog_str , "\t");
+	var numSamplesThisFile = ddCRPLogData.length - 1;
+
+	if(isNaN(numSamples)){
+		numSamples = numSamplesThisFile;
+	}	
+	else{
+		if(numSamplesThisFile != numSamples){
+			alert("Error. The number of samples was previously specified to be "+ numSamples + ", but this files likely contains " + numSamplesThisFile + " samples.\n");
+		}
+	}
+	
+	//change color.
+	
+ 
+ 
+ 
+ //var colorCluster = new Array("#FF0000", "#3366FF", "#33CC33", "#FF9900", "#996633", "#666699");
+ //color the clades
+ for(var c=0; c< numViruses; c++){
+ 	circle[c].toFront();
+ 	//circle[c].attr({stroke:colorCluster[ddCRPLogData[2][c+2]], fill: colorCluster[ddCRPLogData[2][c+2]]});
+ 	//circle[c].attr({fill: colorCluster[ddCRPLogData[2][c+2]]});
+ 	circle[c].attr({stroke: colorClusterStroke[ parseInt(ddCRPLogData[numSamples][c+2])], fill: colorCluster[ parseInt(ddCRPLogData[numSamples][c+2])]});
+ }
+ 
+	isCircleColorAnnotated = 1;
+	
+}
+
+
+var serumPotencyData;
+function readSerumPotency(serumPotency_str){
+	loadedSerumPotency = 1;
+	serumPotencyData = CSVToArray( serumPotency_str , "\t");
+	var numSamplesThisFile = serumPotencyData.length - 1;
+
+	if(isNaN(numSamples)){
+		numSamples = numSamplesThisFile;
+	}	
+	else{
+		if(numSamplesThisFile != numSamples){
+			alert("Error. The number of samples was previously specified to be "+ numSamples + ", but this files likely contains " + numSamplesThisFile + " samples.\n");
+		}
+	}	
+}
+
+var virusAvidityData;
+function readVirusAvidity(virusAvidity_str){
+	loadedVirusAvidity = 1;
+	virusAvidityData = CSVToArray( virusAvidity_str , "\t");
+	var numSamplesThisFile = virusAvidityData.length - 1;
+	if(isNaN(numSamples)){
+		numSamples = numSamplesThisFile;
+	}	
+	else{
+		if(numSamplesThisFile != numSamples){
+			alert("Error. The number of samples was previously specified to be "+ numSamples + ", but this files likely contains " + numSamplesThisFile + " samples.\n");
+		}
+	}		
+}
+
 
 
 var cluster_assignment = new Array();
@@ -1090,23 +1366,25 @@ function add_cluster_color(cluster_str){
   
  //alert(numSamples);
  //column 2 - strain . column 4 - clade.
- 
+//alert("hi")
  //identify unique clades (number, and which - index them)
  for(var row=0; row < numSamples; row++){
  	//alert(cluster_data[row][groupColumn]);
  	var groupNumber = hasIdentifiedGroup(cluster_data[row][groupColumn], groupNames, numGroups); 
  	if(groupNumber == -1){
+ 	//alert( cluster_data[row][groupColumn])
  		 groupNames[numGroups] = cluster_data[row][groupColumn];
 		 cluster_assignment[row] = numGroups;
 		 groupStr = "clade " + cluster_data[row][groupColumn] + " is group #" + numGroups;
 		 numGroups++;
-		 //alert(groupStr);
+//		 alert(groupStr);
  	}
  	else{
+ 	 	//alert("can't identify")
  		cluster_assignment[row] = groupNumber;
  	}
  }
- //alert(cluster_assignment); 
+// alert(cluster_assignment); 
 //alert(cluster_assignment[32]);
 
 //alert(virusName);
@@ -1121,21 +1399,25 @@ for(var v=0; v < virusName.length; v++){
   }
 }
 
-//alert(matchIndexes);
 
  //create a dictionary of clade name and color as a function of indexes
  //var cladeColor
- var colorCluster = new Array("#171E24","#3A7295", "#0B5A9F", "#ED68C5","#C02900", "#7FAD6C", "#025A1E", "#1D7332", "#329135", 
-"#F77565", "#CB301C", "#841410", "#BC1711", "#B0B02E", "#6C5BC5", "#306877", "#F95A23", "#83AE69");
+ 
+ 
+// var colorCluster = new Array("#171E24","#3A7295", "#0B5A9F", "#ED68C5","#C02900", "#7FAD6C", "#025A1E", "#1D7332", "#329135", 
+//"#F77565", "#CB301C", "#841410", "#BC1711", "#B0B02E", "#6C5BC5", "#306877", "#F95A23", "#83AE69");
 
  
  //color the clades
- for(var c=0; c< numSamples; c++){
+ for(var c=0; c< numViruses; c++){
  	circle[c].toFront();
- 	circle[c].attr({stroke:colorCluster[cluster_assignment[matchIndexes[c]]], fill: colorCluster[cluster_assignment[matchIndexes[c]]]});
+ 	circle[c].attr({stroke:colorClusterStroke[cluster_assignment[matchIndexes[c]]], fill: colorCluster[cluster_assignment[matchIndexes[c]]]});
  }
  
  
+ //if success
+ isCircleColorAnnotated = 1;
+
 }
 
 
@@ -1198,6 +1480,25 @@ function quantile(data, prob) {
        }
 }
  
+
+function panOption(){
+	if(chk_pan.checked == false){
+		panZoom.disable();
+		document.getElementById("button_Zoomin").style.background='#B2CBE6'; 
+		document.getElementById("button_Zoomout").style.background='#B2CBE6';  // doesn't work.'
+	}
+	else{           
+		panZoom.enable();
+		document.getElementById("button_Zoomin").style.background='#0074CC'; 
+		document.getElementById("button_Zoomout").style.background='#0074CC';  // doesn't work.'
+		
+		    if(zoomLevel == 9){  document.getElementById("button_Zoomin").style.background='#B2CBE6'; }      	
+           	if(zoomLevel > 0){	document.getElementById("button_Zoomout").style.background='#0074CC'; }
+      		if(zoomLevel < 9){ document.getElementById("button_Zoomin").style.background='#0074CC';}
+      		if(zoomLevel ==0){	document.getElementById("button_Zoomout").style.background='#B2CBE6';}      	                    	
+	}	
+} 
+ 
 function checkDistanceOption(){
 	if(chk_displayDistance.checked == false){
 		isDisplayDistance = 0;
@@ -1245,6 +1546,14 @@ var isFlip = 1;
 var isRotate = 1;
 
 var isDisplayDistance = 1;
+
+
+var currentSample;
+
+
+var panZoom;
+
+var textSizeLabel = 12;
 
 function addViruses(dataStr, readDataType){
 	
@@ -1305,13 +1614,12 @@ else if (readDataType ==2){
 	virusName = new Array(numViruses);
 	
 	numSamples = data.length -1;
-
-
 //var t_data = data;
 
 
 m_x = new Array(numSamples);
 m_y = new Array(numSamples);
+
 
 
  //align
@@ -1349,6 +1657,8 @@ m_y = new Array(numSamples);
   }//isAlign
 
 
+ currentSample = numSamples - 1;
+
 //reference is the last line of the data
  //score:
 if(isRotate | isFlip){
@@ -1368,10 +1678,10 @@ for(var i=0; i < data.length; i++){
   theta_samples = new Array(numSamples);
   flip_samples = new Array(numSamples);
  
- var ref_index = numSamples;
+ var ref_index = currentSample + 1;
  
- theta_samples[numSamples-1] = 0;  //last line is the reference 
- flip_samples[numSamples-1] = 0;
+ theta_samples[currentSample] = 0;  //last line is the reference 
+ flip_samples[currentSample] = 0;
  
  for(var k=1; k <= numSamples; k++){
  
@@ -1391,7 +1701,6 @@ for(var i=0; i < data.length; i++){
 	min_score = score;
 //alert(min_score);
  
-
 for(var flip = 0; flip <=isFlip; flip++){
 
 
@@ -1407,7 +1716,8 @@ for(var flip = 0; flip <=isFlip; flip++){
 	}
   }
 	
-   if(isRotate){	
+   if(isRotate){
+   		
 	var top =0;
 	var bottom = 0;
 	for(var i=0; i < numViruses; i++){
@@ -1447,6 +1757,8 @@ for(var flip = 0; flip <=isFlip; flip++){
 
 }
 
+
+
 //var xyz = -min_theta*180/Math.PI;
 //var str = "min_theta" + xyz + " score=" + min_score;
 
@@ -1457,6 +1769,7 @@ for(var flip = 0; flip <=isFlip; flip++){
 
 theta_samples[k-1] = -min_theta;  //not sure why I need that negative, but it seems that the solution needs to be flipped. I think it is the counterclockwise vs. clockwise thing.
 flip_samples[k-1] = min_hasFlipped; 
+
 
 
 //Apply transformation
@@ -1488,13 +1801,11 @@ else{
 	//no rotation and no flip
 }
 
-
-
 	//plot the last iteration
 	if (readDataType == 1) {
 		for (var i = 0; i < numViruses; i++) {
-			x_coord[i] = Number(data[numSamples ][2 * i + 1]);
-			y_coord[i] = Number(data[numSamples ][2 * i + 2]);
+			x_coord[i] = Number(data[currentSample+1 ][2 * i + 1]);
+			y_coord[i] = Number(data[currentSample+1 ][2 * i + 2]);
 			virusName[i] = data[0][1 + 2 * i].substring(0, data[0][1 + 2 * i].length - 1);
 		  //name[i-1] = array[i].substring(0 , array[i].length-1));	
 		}		
@@ -1577,7 +1888,6 @@ var x_or_y_range_bigger = 0;
 if(y_range > x_range){
 	x_or_y_range_bigger = 1;  //range of y is bigger
 }
-
 
 
 //var x_off = -(x_min);
@@ -1668,6 +1978,10 @@ paper = Raphael('drawing_board');
 var ele = document.getElementById("drawing_board");
 var dimensionStr = "width: " + plotWidth + "; height:" + plotHeight;
 
+panZoom = paper.panzoom({ initialZoom: 0, initialPosition: { x: 0, y: 0} });
+//panZoom.enable();
+panZoom.disable();
+paper.safari();
 //ele.setAttribute("style",dimensionStr); //update height and width    
 
 
@@ -1754,7 +2068,8 @@ if(ypos > plotHeight){
   
   //this is k means clustering
    //circle[i] = paper.circle(xpos, ypos, radius).attr({ stroke: '#3D6AA2', fill: gradient[cluster_membership[i]], 'stroke-width':radius*0.3, title:i , "fill-opacity":1});
-   circle[i] = paper.circle(xpos, ypos, radius).attr({ stroke: '#3D6AA2', fill: '#FFFFFF', 'stroke-width':radius*0.3, title:i , "fill-opacity":1});   
+   
+   circle[i] = paper.circle(xpos, ypos, radius).attr({ stroke: '#3D6AA2', fill: noAnnotationColor, 'stroke-width':radius*0.3, title:i , "fill-opacity":1});   
 }
 
 
@@ -1766,7 +2081,12 @@ if(ypos > plotHeight){
 for (var i = 0; i < numViruses; i++) {
 	circle[i].click(function(){
 		this.toFront();
-//		this.attr({fill: '#FF0000'});
+  		if(isCircleColorAnnotated == 0){
+		//if(this.attr({'fill'})=='#FFFFFF'){
+			
+			this.attr({fill: AnnotationColor});
+		}
+		//}
 		//text.attr({text:dynamicText, x:280});
 		//var text2 = paper.text(280, 280, "Clicked!").attr({			'font-size': 25,			fill: '#009933'		});
 		//alert(this.attr('cx'));
@@ -1775,7 +2095,7 @@ for (var i = 0; i < numViruses; i++) {
 		 if(text[objectID]==null){
 		 	
 				text[objectID] = paper.text(this.attr('cx') - 5, this.attr('cy') - 10, virusName[this.attr('title')]).attr({
-					'font-size': 12,
+					'font-size': textSizeLabel,
 					fill: '#003300',
 					cursor: 'pointer'
 				});
@@ -1787,7 +2107,9 @@ for (var i = 0; i < numViruses; i++) {
 
 			}
 			else{
-		//		this.attr({fill: '#FFFFFF'})  //revert back to the original color
+				if(isCircleColorAnnotated ==0){
+					this.attr({fill: noAnnotationColor})  //revert back to the original color
+				}
 				text[objectID].hide();
 				text[objectID] = null;
 			}
@@ -2133,6 +2455,11 @@ if (readDataType == 1) {
    
 }
 
+
+
+
+
+
  window.onload = function() {
  	
  	
@@ -2212,6 +2539,56 @@ if (readDataType == 1) {
 			add_cluster_color(cluster_reader.result);
 		}
 		cluster_reader.readAsText(cluster_file);
+	});	
+
+
+	//serum potency fileInput
+	var serumPotency_fileInput = document.getElementById('serumPotency_fileInput');
+	serumPotency_fileInput.addEventListener('change', function(e){
+		var serumPotency_file = serumPotency_fileInput.files[0];
+		var serumPotency_reader = new FileReader();
+		serumPotency_reader.onload = function(e){
+			readSerumPotency(trimHeadAndBottom(serumPotency_reader.result));
+		}
+		serumPotency_reader.readAsText(serumPotency_file);
+	});	
+
+
+	//virus avidity fileInput
+	var virusAvidity_fileInput = document.getElementById('virusAvidity_fileInput');
+	virusAvidity_fileInput.addEventListener('change', function(e){
+		var virusAvidity_file = virusAvidity_fileInput.files[0];
+		var virusAvidity_reader = new FileReader();
+		virusAvidity_reader.onload = function(e){
+			readVirusAvidity(trimHeadAndBottom(virusAvidity_reader.result));
+		}
+		virusAvidity_reader.readAsText(virusAvidity_file);
+	});	
+
+
+
+	//MDS log fileInput
+	var mds_log_fileInput = document.getElementById('mds_log_fileInput');
+	mds_log_fileInput.addEventListener('change', function(e){
+		var mds_log_file = mds_log_fileInput.files[0];
+		var mds_log_reader = new FileReader();
+		mds_log_reader.onload = function(e){
+			readMdsLog(trimHeadAndBottom(mds_log_reader.result));
+		}
+		mds_log_reader.readAsText(mds_log_file);
+	});	
+
+
+//mds_log_fileInput
+
+	var ddCRP_log_fileInput = document.getElementById('ddCRP_log_fileInput');
+	ddCRP_log_fileInput.addEventListener('change', function(e){
+		var ddCRP_log_file = ddCRP_log_fileInput.files[0];
+		var ddCRP_log_fileInput_reader = new FileReader();
+		ddCRP_log_fileInput_reader.onload = function(e){
+			read_ddCRP_log(trimHeadAndBottom(ddCRP_log_fileInput_reader.result));
+		}
+		ddCRP_log_fileInput_reader.readAsText(ddCRP_log_file);
 	});	
 
 

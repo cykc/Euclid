@@ -6,6 +6,9 @@
 /*
  * Change Log
  * 
+ * v0.62 vs. v0.61
+ *  add the sera potency
+ * 
  * v0.61 vs. v0.60  : integrate the sera..
  *   To do:
  * 		- load data - that omit lines starting with # and omit blank lines
@@ -368,16 +371,12 @@ var two_y = null;
 var two_ori_x = null;
 var two_ori_y = null;
 function selectPointSerumD(){
-		
  var ID = this.selectedIndex;
- 
  two_x = squareSera[ID].attr('x') + radius;
  two_y = squareSera[ID].attr('y') + radius;
- 
  two_ori_x = x_serum[ID];
  two_ori_y = y_serum[ID];
- 
- 
+
  var neighborhood_radius = 1;
  
  var drawCircle = paper.circle(two_x, two_y, 1*spreadFactor).attr({ fill: '#FF0000', stroke: '#FF0000', 'stroke-width': 0 , opacity:0.2});
@@ -486,10 +485,8 @@ function selectPointSera(){
 }
 
 
-
-function MCMCselectPoint(){
-	 
- 	var dataRow = this.selectedIndex +1;
+function selectPointCurrentSample(cSample){
+	var dataRow = cSample +1;
 //	alert(dataRow);
 	
 	//code to update the plot  (new coordinates and text attached to it)
@@ -597,7 +594,25 @@ else{
 	}
 }//serum laoded
 
+}
+
+
+
+function MCMCselectPoint(){
+	currentSample = this.selectedIndex;
+	 selectPointCurrentSample(currentSample);	
 	
+}
+
+function MCMC_MaxPosterior(){
+	if(loadedMdsLog && virusLoaded){
+		alert("Sample: " +  MdsLogData[maxSampleIndex+1][0] +" has the maximum posterior.");
+		 currentSample = maxSampleIndex;
+  		 selectPointCurrentSample(currentSample);	
+	}
+	else{
+		alert("At least one of the virus location and the MDS log files are not loaded yet");
+	}
 }
 
 
@@ -838,8 +853,8 @@ if(isRotate){
 	var y_coord = new Array(numSera);
 	
     for (var i = 0; i < numSera; i++) {
-      x_coord[i] =  Number(seraData[data.length-1][2*i+1]);
-	  y_coord[i] =  Number(seraData[data.length-1][2*i+2]);
+      x_coord[i] =  Number(seraData[currentSample+1][2*i+1]);
+	  y_coord[i] =  Number(seraData[currentSample+1][2*i+2]);
     }
  	
 	x_serum = x_coord;
@@ -1003,10 +1018,45 @@ for (var i = 0; i < numSera; i++) {
 				var distStr =  dist.toPrecision(3) + " ["+ quantile(pairwiseDistance, 0.1).toPrecision(3) + ", " + quantile(pairwiseDistance, 0.9).toPrecision(3) + "]";
 				CI_pairwise_legend[curObject] = paper.text(x_0_9, y_0_9,distStr ).attr({'font-size': 10,fill:'#000000', cursor: 'pointer'});
 				CI_pairwise_legend[curObject].toFront();
-			  }
+			  } 
+			  
+			  
 			}//curObject iteration
 
 		}
+		
+	
+		
+		if(loadedSerumPotency && loadedVirusAvidity){
+		if(newVariationCircleIsTriggered[objectID] == 0){
+		//print the distribution of values..
+		if(readDataType ==1){
+			var x_data = new Array(numSamples);
+			var y_data = new Array(numSamples);
+
+	 	   var curCircle_x = this.attr('x') + radius;
+	 	   var curCircle_y = this.attr('y') + radius; 
+	 	   var curCircle_color = this.attr('fill');
+	 	   var curStrokeWidth = 0;
+	 	   if(curCircle_color == "#FFFFFF"){
+	 	   	curStrokeWidth = 1;
+	 	   }
+	 	   
+	 	   //alert(Number(serumPotencyData[currentSample+1][1 + objectID]) );
+	 	   var delta = Number(serumPotencyData[currentSample+1][1 + objectID]) - 6.32; //radius at 80
+	 	   //alert(delta);
+	 	   //alert(delta);
+	 	   if(delta > 0){
+		 	newVariationCircle[objectID] = paper.circle(curCircle_x, curCircle_y, spreadFactor*delta).attr({ stroke: '#3D6AA2', fill: curCircle_color, 'stroke-width':curStrokeWidth, title:i , "fill-opacity":0.1});
+	 	  	newVariationCircle[objectID].toBack();
+		  	newVariationCircleIsTriggered[objectID] = 1;
+			}//if delta>0
+	 	  } //readDataType
+  		 //alert(dist_80); 
+ 		} //newVariationCirclesIsTriggered
+		
+		}//loaded serum potency
+				
 		
 	},
 	function(){
@@ -1020,6 +1070,11 @@ for (var i = 0; i < numSera; i++) {
 			  CI_pairwise_legend[curObject] = null;
 			 }
 		}
+		
+		//var objectID = Number(this.attr('title'));
+		  newVariationCircle[objectID].hide();
+		  newVariationCircle[objectID] = null;
+		  newVariationCircleIsTriggered[objectID] = 0;	
 	
 	}
 	);
@@ -1072,6 +1127,73 @@ var newSelectSeraD = document.createElement('select');
 
 
 } //end function
+
+
+var loadedSerumPotency = 0;
+var loadedVirusAvidity = 1;
+
+
+var loadedMdsLog = 0;
+
+var MdsLogData;
+var maxSampleIndex;
+
+function readMdsLog(MdsLog_str){
+	loadedMdsLog = 1;
+	MdsLogData = CSVToArray( MdsLog_str , "\t");
+	var numSamplesThisFile = MdsLogData.length - 1;
+
+	if(isNaN(numSamples)){
+		numSamples = numSamplesThisFile;
+	}	
+	else{
+		if(numSamplesThisFile != numSamples){
+			alert("Error. The number of samples was previously specified to be "+ numSamples + ", but this files likely contains " + numSamplesThisFile + " samples.\n");
+		}
+	}
+	//the second column is the posterior
+	//get the maximum posterior:
+	maxSampleIndex=0;
+	var maxScore = Number(MdsLogData[0+1][1]);
+	for(var i=0; i < numSamples; i++){
+		if(maxScore < Number(MdsLogData[i+1][1]) ){
+			maxScore = Number(MdsLogData[i+1][1]);
+			maxSampleIndex = i;
+		}
+	}
+	
+}
+
+var serumPotencyData;
+function readSerumPotency(serumPotency_str){
+	loadedSerumPotency = 1;
+	serumPotencyData = CSVToArray( serumPotency_str , "\t");
+	var numSamplesThisFile = serumPotencyData.length - 1;
+
+	if(isNaN(numSamples)){
+		numSamples = numSamplesThisFile;
+	}	
+	else{
+		if(numSamplesThisFile != numSamples){
+			alert("Error. The number of samples was previously specified to be "+ numSamples + ", but this files likely contains " + numSamplesThisFile + " samples.\n");
+		}
+	}	
+}
+
+var virusAvidityData;
+function readVirusAvidity(virusAvidity_str){
+	loadedVirusAvidity = 1;
+	virusAvidityData = CSVToArray( virusAvidity_str , "\t");
+	var numSamplesThisFile = virusAvidityData.length - 1;
+	if(isNaN(numSamples)){
+		numSamples = numSamplesThisFile;
+	}	
+	else{
+		if(numSamplesThisFile != numSamples){
+			alert("Error. The number of samples was previously specified to be "+ numSamples + ", but this files likely contains " + numSamplesThisFile + " samples.\n");
+		}
+	}		
+}
 
 
 
@@ -1246,6 +1368,9 @@ var isRotate = 1;
 
 var isDisplayDistance = 1;
 
+
+var currentSample;
+
 function addViruses(dataStr, readDataType){
 	
 	
@@ -1305,8 +1430,6 @@ else if (readDataType ==2){
 	virusName = new Array(numViruses);
 	
 	numSamples = data.length -1;
-
-
 //var t_data = data;
 
 
@@ -1368,10 +1491,11 @@ for(var i=0; i < data.length; i++){
   theta_samples = new Array(numSamples);
   flip_samples = new Array(numSamples);
  
- var ref_index = numSamples;
+ currentSample = numSamples - 1;
+ var ref_index = currentSample + 1;
  
- theta_samples[numSamples-1] = 0;  //last line is the reference 
- flip_samples[numSamples-1] = 0;
+ theta_samples[currentSample] = 0;  //last line is the reference 
+ flip_samples[currentSample] = 0;
  
  for(var k=1; k <= numSamples; k++){
  
@@ -1493,8 +1617,8 @@ else{
 	//plot the last iteration
 	if (readDataType == 1) {
 		for (var i = 0; i < numViruses; i++) {
-			x_coord[i] = Number(data[numSamples ][2 * i + 1]);
-			y_coord[i] = Number(data[numSamples ][2 * i + 2]);
+			x_coord[i] = Number(data[currentSample+1 ][2 * i + 1]);
+			y_coord[i] = Number(data[currentSample+1 ][2 * i + 2]);
 			virusName[i] = data[0][1 + 2 * i].substring(0, data[0][1 + 2 * i].length - 1);
 		  //name[i-1] = array[i].substring(0 , array[i].length-1));	
 		}		
@@ -2215,8 +2339,44 @@ if (readDataType == 1) {
 	});	
 
 
+	//serum potency fileInput
+	var serumPotency_fileInput = document.getElementById('serumPotency_fileInput');
+	serumPotency_fileInput.addEventListener('change', function(e){
+		var serumPotency_file = serumPotency_fileInput.files[0];
+		var serumPotency_reader = new FileReader();
+		serumPotency_reader.onload = function(e){
+			readSerumPotency(trimHeadAndBottom(serumPotency_reader.result));
+		}
+		serumPotency_reader.readAsText(serumPotency_file);
+	});	
 
 
+	//virus avidity fileInput
+	var virusAvidity_fileInput = document.getElementById('virusAvidity_fileInput');
+	virusAvidity_fileInput.addEventListener('change', function(e){
+		var virusAvidity_file = virusAvidity_fileInput.files[0];
+		var virusAvidity_reader = new FileReader();
+		virusAvidity_reader.onload = function(e){
+			readVirusAvidity(trimHeadAndBottom(virusAvidity_reader.result));
+		}
+		virusAvidity_reader.readAsText(virusAvidity_file);
+	});	
+
+
+
+	//MDS log fileInput
+	var mds_log_fileInput = document.getElementById('mds_log_fileInput');
+	mds_log_fileInput.addEventListener('change', function(e){
+		var mds_log_file = mds_log_fileInput.files[0];
+		var mds_log_reader = new FileReader();
+		mds_log_reader.onload = function(e){
+			readMdsLog(trimHeadAndBottom(mds_log_reader.result));
+		}
+		mds_log_reader.readAsText(mds_log_file);
+	});	
+
+
+mds_log_fileInput
 
 //Create SVG Image
 document.getElementById("createImage").onclick = function() {
