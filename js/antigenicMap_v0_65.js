@@ -6,6 +6,8 @@
 /*
  * Change Log
  * 
+ * 
+ * 
  * future:
  *   option to read only the first few lines
  * 
@@ -14,6 +16,11 @@
  *   - when trying to move the text labe by scrolling, the panning also occurs.. need a way to disable panning [now have option to disable panning]
  *  
  *   - scroll on picture also does the zoom in and out..   it doesn't go through the zoomLevel routine that sync up with the zoom in and out button states.
+ * 
+ * v0.65 - load in cluster assignments for Gabriela's model
+ *	- fixed a bug that prevented loading virus location when Rotate is off.. the bug was that when rotate is unchecked, a part of the code that would be run
+ * 	  inside isRotate would not be run, such that the   currentSample = numSamples - 1;  was not assigned if rotate is unchecked
+ * 			-moved the line  currentSample = numSamples - 1 such that it is not inside the if condition 
  * 
  * v0.63
  *  zoom in/out
@@ -551,6 +558,8 @@ if(virusLoaded){
 	 }		
 	}
 
+ 
+
 }
 
 
@@ -618,6 +627,15 @@ else{
 	 	 		
 	}
 }//serum laoded
+
+if(load_ddCRPLog){
+ for(var c=0; c< numViruses; c++){
+ 	circle[c].toFront();
+ 	circle[c].attr({stroke: colorClusterStroke[ parseInt(ddCRPLogData[dataRow][c+2])], fill: colorCluster[ parseInt(ddCRPLogData[dataRow][c+2])]});
+ }
+}
+
+
 
 }
 
@@ -796,7 +814,7 @@ var newVariationCircle;
 var newVariationCircleIsTriggered;
 var text;
 var data;
-var radius = 8;
+var radius = 5;
 var numViruses;
 var CI_pairwise;
 var CI_pairwise_legend;
@@ -1218,6 +1236,16 @@ var newSelectSeraD = document.createElement('select');
 
 } //end function
 
+//Vietnamnese data analysis
+//var colorCluster = new Array("#171E24","#3A7295", "#0B5A9F", "#ED68C5","#C02900", "#7FAD6C", "#025A1E", "#1D7332", "#329135", 
+//"#F77565", "#CB301C", "#841410", "#BC1711", "#B0B02E", "#6C5BC5", "#306877", "#F95A23", "#83AE69");
+
+
+//var colorClusterStroke = new Array("#33FF00", "#666600", "#663300", "#FF0000", "#FF9900", "#FFFF00", "#3300CC", "#3399CC", "#6633CC", "#FF33CC", "#FFCCCC", "#0000CC", "#00CCCC", "#9933CC", "#CCFFFF", "#CCFF99", "#330000" , "#336600" );
+var colorClusterStroke = new Array("#336633", "#663333", "#FF3366", "#FF6666", "#FF9933", "#333333", "#339933", "#663333", "#FF3333", "#FFCC33", "#000033", "#00CC33", "#993333", "#CCFF33", "#CCFF00", "#330099" , "#336699" );
+//var colorCluster = new Array("#33FFFF", "#6666FF", "#6633FF", "#FF00FF", "#FF99FF", "#FFFFFF", "#330033", "#339933", "#663333", "#FF3333", "#FFCC33", "#000033", "#00CC33", "#993333", "#CCFF33", "#CCFF00", "#330099" , "#336699" );
+var colorCluster = new Array("#33FF00", "#666600",  "#FF0000", "#FF9900", "#FFFF00", "#3300CC", "#3399CC", "#6633CC", "#FF33CC", "#FFCCCC", "#0000CC", "#00CCCC", "#9933CC", "#CCFFFF", "#CCFF99", "#330000" , "#336600" );
+
 
 var loadedSerumPotency = 0;
 var loadedVirusAvidity = 1;
@@ -1253,6 +1281,42 @@ function readMdsLog(MdsLog_str){
 	}
 	
 }
+
+
+var load_ddCRPLog = 0;
+var ddCRPLogData;
+function read_ddCRP_log(ddCRPLog_str){
+	load_ddCRPLog = 1;
+	ddCRPLogData = CSVToArray( ddCRPLog_str , "\t");
+	var numSamplesThisFile = ddCRPLogData.length - 1;
+
+	if(isNaN(numSamples)){
+		numSamples = numSamplesThisFile;
+	}	
+	else{
+		if(numSamplesThisFile != numSamples){
+			alert("Error. The number of samples was previously specified to be "+ numSamples + ", but this files likely contains " + numSamplesThisFile + " samples.\n");
+		}
+	}
+	
+	//change color.
+	
+ 
+ 
+ 
+ //var colorCluster = new Array("#FF0000", "#3366FF", "#33CC33", "#FF9900", "#996633", "#666699");
+ //color the clades
+ for(var c=0; c< numViruses; c++){
+ 	circle[c].toFront();
+ 	//circle[c].attr({stroke:colorCluster[ddCRPLogData[2][c+2]], fill: colorCluster[ddCRPLogData[2][c+2]]});
+ 	//circle[c].attr({fill: colorCluster[ddCRPLogData[2][c+2]]});
+ 	circle[c].attr({stroke: colorClusterStroke[ parseInt(ddCRPLogData[numSamples][c+2])], fill: colorCluster[ parseInt(ddCRPLogData[numSamples][c+2])]});
+ }
+ 
+	isCircleColorAnnotated = 1;
+	
+}
+
 
 var serumPotencyData;
 function readSerumPotency(serumPotency_str){
@@ -1340,14 +1404,14 @@ for(var v=0; v < virusName.length; v++){
  //var cladeColor
  
  
- var colorCluster = new Array("#171E24","#3A7295", "#0B5A9F", "#ED68C5","#C02900", "#7FAD6C", "#025A1E", "#1D7332", "#329135", 
-"#F77565", "#CB301C", "#841410", "#BC1711", "#B0B02E", "#6C5BC5", "#306877", "#F95A23", "#83AE69");
+// var colorCluster = new Array("#171E24","#3A7295", "#0B5A9F", "#ED68C5","#C02900", "#7FAD6C", "#025A1E", "#1D7332", "#329135", 
+//"#F77565", "#CB301C", "#841410", "#BC1711", "#B0B02E", "#6C5BC5", "#306877", "#F95A23", "#83AE69");
 
  
  //color the clades
  for(var c=0; c< numViruses; c++){
  	circle[c].toFront();
- 	circle[c].attr({stroke:colorCluster[cluster_assignment[matchIndexes[c]]], fill: colorCluster[cluster_assignment[matchIndexes[c]]]});
+ 	circle[c].attr({stroke:colorClusterStroke[cluster_assignment[matchIndexes[c]]], fill: colorCluster[cluster_assignment[matchIndexes[c]]]});
  }
  
  
@@ -1557,6 +1621,7 @@ m_x = new Array(numSamples);
 m_y = new Array(numSamples);
 
 
+
  //align
  
  if(isAlign){
@@ -1592,6 +1657,8 @@ m_y = new Array(numSamples);
   }//isAlign
 
 
+ currentSample = numSamples - 1;
+
 //reference is the last line of the data
  //score:
 if(isRotate | isFlip){
@@ -1611,7 +1678,6 @@ for(var i=0; i < data.length; i++){
   theta_samples = new Array(numSamples);
   flip_samples = new Array(numSamples);
  
- currentSample = numSamples - 1;
  var ref_index = currentSample + 1;
  
  theta_samples[currentSample] = 0;  //last line is the reference 
@@ -1635,7 +1701,6 @@ for(var i=0; i < data.length; i++){
 	min_score = score;
 //alert(min_score);
  
-
 for(var flip = 0; flip <=isFlip; flip++){
 
 
@@ -1651,7 +1716,8 @@ for(var flip = 0; flip <=isFlip; flip++){
 	}
   }
 	
-   if(isRotate){	
+   if(isRotate){
+   		
 	var top =0;
 	var bottom = 0;
 	for(var i=0; i < numViruses; i++){
@@ -1691,6 +1757,8 @@ for(var flip = 0; flip <=isFlip; flip++){
 
 }
 
+
+
 //var xyz = -min_theta*180/Math.PI;
 //var str = "min_theta" + xyz + " score=" + min_score;
 
@@ -1701,6 +1769,7 @@ for(var flip = 0; flip <=isFlip; flip++){
 
 theta_samples[k-1] = -min_theta;  //not sure why I need that negative, but it seems that the solution needs to be flipped. I think it is the counterclockwise vs. clockwise thing.
 flip_samples[k-1] = min_hasFlipped; 
+
 
 
 //Apply transformation
@@ -1731,8 +1800,6 @@ flip_samples[k-1] = min_hasFlipped;
 else{
 	//no rotation and no flip
 }
-
-
 
 	//plot the last iteration
 	if (readDataType == 1) {
@@ -1821,7 +1888,6 @@ var x_or_y_range_bigger = 0;
 if(y_range > x_range){
 	x_or_y_range_bigger = 1;  //range of y is bigger
 }
-
 
 
 //var x_off = -(x_min);
@@ -2513,7 +2579,21 @@ if (readDataType == 1) {
 	});	
 
 
-mds_log_fileInput
+//mds_log_fileInput
+
+	var ddCRP_log_fileInput = document.getElementById('ddCRP_log_fileInput');
+	ddCRP_log_fileInput.addEventListener('change', function(e){
+		var ddCRP_log_file = ddCRP_log_fileInput.files[0];
+		var ddCRP_log_fileInput_reader = new FileReader();
+		ddCRP_log_fileInput_reader.onload = function(e){
+			read_ddCRP_log(trimHeadAndBottom(ddCRP_log_fileInput_reader.result));
+		}
+		ddCRP_log_fileInput_reader.readAsText(ddCRP_log_file);
+	});	
+
+
+
+
 
 //Create SVG Image
 document.getElementById("createImage").onclick = function() {

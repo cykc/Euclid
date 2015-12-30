@@ -4,7 +4,7 @@
     
     <script src="js/raphael.js"></script>
     <script src="js/jquery-1.10.2.js"></script>
-    <script src="js/antigenicMap_v0_63.js"></script>
+    <script src="js/antigenicMap_v0_69.js"></script>
     <script src="js/raphael.pan-zoom.min.js"></script>
     <script src="js/g.dot-min.js"></script>
     <script src="js/canvg.js"></script>
@@ -99,10 +99,21 @@
 <div id="fileLoad">
       Load virus coordinates: <br>
       <input type="file" id="fileInput">
-	<br>
-      Load cluster annotation file:<br>
-      <input type="file" id="cluster_fileInput">
-	<br>
+
+     <br> 
+        Load cluster membership file:<br>
+      <input type="file" id="ddCRP_log_fileInput">
+      
+	<br> 
+        Load the cluster path file:<br>
+      <input type="file" id="path_fileInput">
+      
+	<br> 
+        Load the driver mutation file:<br>
+      <input type="file" id="mutations_fileInput">          
+
+
+	<br>         
       Load serum coordinates:<br>
       <input type="file" id="serum_fileInput">
     <br>
@@ -114,7 +125,13 @@
       
     <br> 
         Load MDS log file:<br>
-      <input type="file" id="mds_log_fileInput">     
+      <input type="file" id="mds_log_fileInput">   
+      
+
+
+	<br>
+      Load cluster annotation file: (old format) <br>
+      <input type="file" id="cluster_fileInput">
 </div>
 </div>
 
@@ -124,9 +141,9 @@
 		<a href="#" onclick="document.getElementById('Procrustes').style.display = 'block'; return false;">[show]</a>	
 	</h3>
 	<div id="Procrustes">
-	<input id="align" type="checkbox" name="align" value="align" checked>Align to the origin<br>
+	<input id="align" type="checkbox" name="align" value="align" >Align to the origin<br>
 	<input id="toFlip" type="checkbox" name="toFlip" value="toFlip" >Flip<br>
-	<input id="rotate" type="checkbox" name="rotate" value="rotate" checked >Rotate
+	<input id="rotate" type="checkbox" name="rotate" value="rotate">Rotate
 	</div>	
 </div>
     

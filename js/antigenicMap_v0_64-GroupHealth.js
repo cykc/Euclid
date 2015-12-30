@@ -1338,10 +1338,13 @@ for(var v=0; v < virusName.length; v++){
 
  //create a dictionary of clade name and color as a function of indexes
  //var cladeColor
- 
- 
- var colorCluster = new Array("#171E24","#3A7295", "#0B5A9F", "#ED68C5","#C02900", "#7FAD6C", "#025A1E", "#1D7332", "#329135", 
-"#F77565", "#CB301C", "#841410", "#BC1711", "#B0B02E", "#6C5BC5", "#306877", "#F95A23", "#83AE69");
+//                              #NA,     unvaccine (blue), vaccine (brown)
+ var colorCluster = new Array("#E6E68A", "#0099CC", "#663300");
+// var colorCluster = new Array("#171E24", "#1D7332", "#FFFFFF");
+
+//for the vietnamnese
+// var colorCluster = new Array("#171E24","#3A7295", "#0B5A9F", "#ED68C5","#C02900", "#7FAD6C", "#025A1E", "#1D7332", "#329135", 
+//"#F77565", "#CB301C", "#841410", "#BC1711", "#B0B02E", "#6C5BC5", "#306877", "#F95A23", "#83AE69");
 
  
  //color the clades

@@ -6,6 +6,12 @@
 /*
  * Change Log
  * 
+ * 
+ * v0.68 - cluster's group size is used to scale the size of the virus
+ * 
+ *
+ * v0.67 - labels are colored consistently with FigTree's fixed coloring scheme
+ * 
  * future:
  *   option to read only the first few lines
  * 
@@ -14,6 +20,13 @@
  *   - when trying to move the text labe by scrolling, the panning also occurs.. need a way to disable panning [now have option to disable panning]
  *  
  *   - scroll on picture also does the zoom in and out..   it doesn't go through the zoomLevel routine that sync up with the zoom in and out button states.
+ * 
+ * v0.66 - add a routine to connect clusters... and label mutation
+ * 
+ * v0.65 - load in cluster assignments for Gabriela's model
+ *	- fixed a bug that prevented loading virus location when Rotate is off.. the bug was that when rotate is unchecked, a part of the code that would be run
+ * 	  inside isRotate would not be run, such that the   currentSample = numSamples - 1;  was not assigned if rotate is unchecked
+ * 			-moved the line  currentSample = numSamples - 1 such that it is not inside the if condition 
  * 
  * v0.63
  *  zoom in/out
@@ -510,8 +523,15 @@ function selectPointSera(){
 }
 
 
+var max_cluster_label=0;
+var nElements;
+
 function selectPointCurrentSample(cSample){
 	var dataRow = cSample +1;
+	var virus_xpos = new Array();
+ 	var virus_ypos = new Array();
+
+
 //	alert(dataRow);
 	
 	//code to update the plot  (new coordinates and text attached to it)
@@ -534,7 +554,11 @@ if(virusLoaded){
 	for(var ID=0; ID < numViruses; ID++){
 	  var xpos = x_offset +x_coord[ID]*spreadFactor;
 	  var ypos =  plotHeight - y_offset - y_coord[ID]*spreadFactor;
+  		virus_xpos[ID] = xpos;
+		virus_ypos[ID] = ypos;
+
 	 //var anim = Raphael.animation({cx:100 , cy:100 }, 300);
+	 //var anim = Raphael.animation({cx:xpos , cy:ypos }, 300);
 	 var anim = Raphael.animation({cx:xpos , cy:ypos }, 300);
 	 circle[ID].animate(anim);
 	}
@@ -550,6 +574,8 @@ if(virusLoaded){
 		text[ID].animate(anim);
 	 }		
 	}
+
+ 
 
 }
 
@@ -618,6 +644,184 @@ else{
 	 	 		
 	}
 }//serum laoded
+
+if(load_ddCRPLog){
+
+	var groupSize = new Array();
+	for(var c=0; c< numViruses; c++){
+	  groupSize[c] = 0;
+	}
+
+	for(var c=0; c < numViruses; c++){
+		groupSize[   parseInt(ddCRPLogData[dataRow][c+2]) ] = groupSize[parseInt(ddCRPLogData[dataRow][c+2]) ] +1;
+	}
+
+//alert("hi");
+
+ for(var c=0; c< numViruses; c++){
+ 	circle[c].toFront();
+// 	circle[c].attr({stroke: colorClusterStroke[ parseInt(ddCRPLogData[dataRow][c+2])], fill: colorCluster[ parseInt(ddCRPLogData[dataRow][c+2])]});
+
+//scaled by the number of points in the cluster:
+	//  var curRadius = groupSize[parseInt(ddCRPLogData[dataRow][c+2]) ]/numViruses *100; //scale by radius
+	var curRadius =  Math.sqrt(   groupSize[parseInt(ddCRPLogData[dataRow][c+2]) ]/numViruses / Math.PI) *80;   //scale by area
+ 	circle[c].attr({r: curRadius, stroke: colorClusterStroke[ parseInt(ddCRPLogData[dataRow][c+2])], fill: colorCluster[ parseInt(ddCRPLogData[dataRow][c+2])]});
+ }
+}
+
+
+//var oldNumClusters = num_clusters;
+//var oldNumClusters = max_cluster_label;
+var oldNumClusters = 100;
+if(load_cluster_path){
+	
+	//alert(oldNumClusters);
+	//remove old path
+	if(clusterPathLine != null){
+//		for(var i=1; i <= oldNumClusters; i++){
+		for(var i=1; i <= 100; i++){
+	//		alert(nElements[i]);
+	//		if(nElements[i] > 0){
+				clusterPathLine[i].hide();
+	//		}
+		}
+		clusterPathLine = null;
+	}
+	cluster_centroid_x = null;
+	cluster_centroid_y = null;
+	
+//put viruses into string lists
+	var cluster_members = new Array();
+	for(var i=0; i< numViruses; i++){
+		cluster_members[i] = "";	
+	}
+	
+
+//alert(	parseInt(ddCRPLogData[dataRow][0]));	
+//alert(	parseInt(ddCRPLogData[dataRow][0+1]));	
+//alert(	parseInt(ddCRPLogData[dataRow][0+2]));
+//alert(	parseInt(ddCRPLogData[dataRow][0+3]));
+	
+	for(var c=0; c< numViruses; c++){
+		cluster_members[ parseInt(ddCRPLogData[dataRow][c+2]) ] = cluster_members[ parseInt(ddCRPLogData[dataRow][c+2]) ] +  c + "\t" ; 
+	}
+	
+	//alert(cluster_members[0]);
+	//alert(cluster_members[20]);
+//alert(cluster_members[21]);
+//alert(cluster_members[22]);
+
+	num_clusters = 0;
+	var clusterLabel = new Array();
+	cluster_centroid_x = new Array();
+	cluster_centroid_y = new Array();
+	
+	
+	//calculate cluster mean in each cluster
+//	for(var c=0; c< numViruses; c++){
+// 		if( cluster_members[c] != ""){
+// 			clusterLabel[num_clusters] = c;
+// 			num_clusters++;			
+// 		} 
+// 	}
+
+	max_cluster_label = 0;
+	for(var c=0; c < numViruses; c++){
+		if(max_cluster_label <  parseInt(ddCRPLogData[dataRow][c+2]) ){
+			max_cluster_label =  parseInt(ddCRPLogData[dataRow][c+2]);
+		
+		}
+	
+	}
+	//alert(max_cluster_label); 	
+ 	
+ 	//alert(clusterLabel);
+// 	for(var c=0; c< num_clusters; c++){
+ 	for(var c=0; c<= max_cluster_label; c++){
+ 		cluster_centroid_x[c] = 0;
+ 		cluster_centroid_y[c] = 0;
+ 	}
+
+
+	nElements = new Array();
+
+	for(var c=0; c<= max_cluster_label; c++){ 
+	//for(var c=0; c< num_clusters; c++){ 
+		//alert(cluster_members[ c ]);
+ 		if( cluster_members[c] != ""){
+			//alert(cluster_members[ clusterLabel[c] ]);
+ 			//var members = CSVToArray( cluster_members[ clusterLabel[c] ] , "\t");
+ 			var members = CSVToArray( cluster_members[ c ] , "\t");
+ 			//alert(c);
+ 			var numElements = members[0].length - 1;
+ 			nElements[c] = numElements;
+ 			//alert( numElements);
+ 			for(var j=0; j < numElements; j++){
+ 				var virusIndex = parseInt(members[0][j]);
+ 				//alert(virusIndex);
+ 				//cluster_centroid_x[c] += circle[virusIndex].attr('cx'); //in theory it should work, but because of the delay, the attribute doesn't get updated in time
+ 				//cluster_centroid_y[c] += circle[virusIndex].attr('cy');
+ 				cluster_centroid_x[c] += virus_xpos[virusIndex];
+ 				cluster_centroid_y[c] += virus_ypos[virusIndex];
+ 			}
+ 			cluster_centroid_x[c] = cluster_centroid_x[c]/numElements;
+ 			cluster_centroid_y[c] = cluster_centroid_y[c]/numElements; 
+ 		
+ 		}
+ 		else{
+ 			nElements[c] = 0;
+ 		}
+	}
+//alert("hi");
+//alert(nElements);
+	clusterPathLine = new Array();
+	//connect the paths
+	//alert(num_clusters);
+	//for(var c=1; c<num_clusters; c++){
+//	for(var c=1; c<= max_cluster_label; c++){
+//alert(nElements);
+	for(var c=1; c<= 100; c++){
+		var c2 = parseInt(clusterPathData[dataRow][c+1]);
+		
+		if( nElements[c] >0 && nElements[c2]>0){
+//		alert(c + " and " + c2);
+			clusterPathLine[c] = paper.path("M " + cluster_centroid_x[c] + " " + cluster_centroid_y[c] + " L " + cluster_centroid_x[c2] + " " + cluster_centroid_y[c2]).attr( {		stroke: '#3399FF',		'stroke-width':2,		'opacity': 0.8	});
+			//clusterPathLine[c].show();
+		}
+		else{
+			clusterPathLine[c] = paper.path("M 0 0 L 0 0").attr( {		stroke: '#3399FF',		'stroke-width':2,		'opacity': 0.8	});
+			clusterPathLine[c].hide();
+		}
+	}
+	
+	
+
+	
+	
+}
+
+
+if(load_mutations){
+	if(driverMutations_labels != null ){
+		for(var c=1; c< oldNumClusters; c++){
+			driverMutations_labels[c].hide();
+		}
+		driverMutations_labels = null;
+	}
+	
+	
+	driverMutations_labels = new Array();
+	for(var c=1; c<num_clusters; c++){
+		var c2 = parseInt(clusterPathData[dataRow][c+1]);
+		var mid_x = (cluster_centroid_x[c2] +cluster_centroid_x[c])/2 ;  
+		var mid_y = (cluster_centroid_y[c2] +cluster_centroid_y[c])/2;
+		driverMutations_labels[c] = paper.text(mid_x, mid_y, (parseInt(mutationsData[dataRow][c+1])+"")).attr({ 'font-size': 12, fill: '#000000', cursor: 'pointer' });
+	}
+	
+	//alert("hi");
+}
+
+
 
 }
 
@@ -796,7 +1000,7 @@ var newVariationCircle;
 var newVariationCircleIsTriggered;
 var text;
 var data;
-var radius = 8;
+var radius = 3;
 var numViruses;
 var CI_pairwise;
 var CI_pairwise_legend;
@@ -842,7 +1046,8 @@ function changeRadiusFunction(){
 	}
 
 
-	
+	//just change viruses, not sera ..
+	/*
 	
 	if(serumLoaded){ 
 	 for(var ID=0; ID < numSera; ID++){
@@ -853,7 +1058,7 @@ function changeRadiusFunction(){
 	  squareSera[ID].animate(anim); 	 
 	  }
 	}
-	
+	*/
 
 }
 
@@ -989,8 +1194,14 @@ for(var i=0; i< numSera; i++){
 	}
 
    //squareSera[i] = paper.circle(xpos, ypos, radius+2).attr({ stroke: '#660066', fill: '#FFFFFF', 'stroke-width': 2, title:i , "fill-opacity": 1});
-  squareSera[i] = paper.rect(xpos_begin, ypos_begin, radius*2, radius*2).attr({ stroke: '#660066', fill: '#FFFFFF', 'stroke-width': 2, title:i , "fill-opacity": 1});  
- 
+
+//old sera color
+//  squareSera[i] = paper.rect(xpos_begin, ypos_begin, radius*2, radius*2).attr({ stroke: '#660066', fill: '#FFFFFF', 'stroke-width': 2, title:i , "fill-opacity": 1});  
+
+//new sera color
+squareSera[i] = paper.rect(xpos_begin, ypos_begin, radius*2, radius*2).attr({ stroke: '#D1C2B2', fill: '#FFFFFF', 'stroke-width': 1, title:i , "fill-opacity": 1});  
+
+
  	if(isSerumNaN[i]){
  		squareSera[i].hide();
  	}
@@ -1218,6 +1429,224 @@ var newSelectSeraD = document.createElement('select');
 
 } //end function
 
+//Vietnamnese data analysis
+//var colorCluster = new Array("#171E24","#3A7295", "#0B5A9F", "#ED68C5","#C02900", "#7FAD6C", "#025A1E", "#1D7332", "#329135", 
+//"#F77565", "#CB301C", "#841410", "#BC1711", "#B0B02E", "#6C5BC5", "#306877", "#F95A23", "#83AE69");
+
+
+//var colorClusterStroke = new Array("#33FF00", "#666600", "#663300", "#FF0000", "#FF9900", "#FFFF00", "#3300CC", "#3399CC", "#6633CC", "#FF33CC", "#FFCCCC", "#0000CC", "#00CCCC", "#9933CC", "#CCFFFF", "#CCFF99", "#330000" , "#336600" );
+//var colorClusterStroke = new Array("#336633", "#663333", "#FF3366", "#FF6666", "#FF9933", "#333333", "#339933", "#663333", "#FF3333", "#FFCC33", "#000033", "#00CC33", "#993333", "#CCFF33", "#CCFF00", "#330099" , "#336699" );
+//var colorCluster = new Array("#33FFFF", "#6666FF", "#6633FF", "#FF00FF", "#FF99FF", "#FFFFFF", "#330033", "#339933", "#663333", "#FF3333", "#FFCC33", "#000033", "#00CC33", "#993333", "#CCFF33", "#CCFF00", "#330099" , "#336699" );
+
+//var colorCluster = new Array("#33FF00", "#666600",  "#FF0000", "#FF9900", "#FFFF00", "#3300CC", "#3399CC", "#6633CC", "#FF33CC", "#FFCCCC", "#0000CC", "#00CCCC", "#9933CC", "#CCFFFF", "#CCFF99", "#330000" , "#336600" );
+
+//# 0.67 version.. with FigTree s HSB spectrum
+
+
+//HSB spectrum
+/*
+var colorClusterStroke = new Array(
+"#D23333",
+"#D13333",
+"#D03333",
+"#C36633",
+"#9E9933",
+"#789933",
+"#6A9966",
+"#6A9966",
+"#6A6666",
+"#6C6666",
+"6D6699",
+"#7B6699",
+"#A13399",
+"#C53399",
+"#D23399",
+"#D23366",
+
+"#FF9999");
+
+//HSB spectrum
+var colorCluster = new Array(
+"#D2706E",
+"#D1936E",
+"#D0B76E",
+"#C3CD6E",
+"#9ECC6E",
+"#78CC6E",
+"#6ACC87",
+"#6ACDAC",
+"#6ACED0",
+"#6CACD0",
+"6D8AD0",
+"#7B73D0",
+"#A174D0",
+"#C575D0",
+"#D274B8",
+"#D27293",
+
+"#FFFFFF");
+*/
+
+
+var colorClusterStroke = new Array(
+"#483AE4",
+"#EA3443",
+"#FFB226",
+"#56F827",
+"#22939B",
+"#9B3595",
+"#FF6627",
+"#F0FA26",
+"#484848",
+"#A79DF2",
+"#F69BA4",
+"#FFD998",
+"#AEFB98",
+"#97CACE",
+"#CE9CCB",
+"#FFB398",
+"#F8FC98",
+"#C4C4C4",
+"#261F79",
+"#7C1C23",
+"#885E14",
+"#2E8415",
+"#134E52",
+"#521C4F",
+"#893614",
+"#808514",
+"#483AE4",
+"#EA3443",
+"#FFB227",
+"#56F827",
+"#23939B",
+"#9B3595",
+"#FF6527",
+"#F0FA26",
+"#484848",
+"#A79DF2",
+"#F69BA4",
+"#FFD998",
+"#AEFB98",
+"#97CACE",
+"#CE9CCB",
+"#FFB398",
+"#F9FC98",
+"#C5C4C5",
+"#261F79",
+"#7C1C24",
+"#885E14",
+"#2E8415",
+"#134E52",
+"#521C4F",
+"#893615",
+"#808514",
+"#483AE4",
+"#EA3443",
+"#FFB227",
+"#56F827",
+"#23939B",
+"#9B3595",
+"#FF6527",
+"#F0FA26",
+"#484848",
+"#A79DF2",
+"#F69BA4",
+"#FFD998",
+"#AEFB98",
+"#97CACE",
+"#CE9CCB",
+"#FFB398",
+"#F9FC98",
+"#C5C4C5",
+"#261F79",
+"#7C1C24",
+"#885E14",
+"#2E8415",
+"#134E52");
+
+
+
+
+//75 colors
+var colorCluster = new Array(
+"#483AE4",
+"#EA3443",
+"#FFB226",
+"#56F827",
+"#22939B",
+"#9B3595",
+"#FF6627",
+"#F0FA26",
+"#484848",
+"#A79DF2",
+"#F69BA4",
+"#FFD998",
+"#AEFB98",
+"#97CACE",
+"#CE9CCB",
+"#FFB398",
+"#F8FC98",
+"#C4C4C4",
+"#261F79",
+"#7C1C23",
+"#885E14",
+"#2E8415",
+"#134E52",
+"#521C4F",
+"#893614",
+"#808514",
+"#483AE4",
+"#EA3443",
+"#FFB227",
+"#56F827",
+"#23939B",
+"#9B3595",
+"#FF6527",
+"#F0FA26",
+"#484848",
+"#A79DF2",
+"#F69BA4",
+"#FFD998",
+"#AEFB98",
+"#97CACE",
+"#CE9CCB",
+"#FFB398",
+"#F9FC98",
+"#C5C4C5",
+"#261F79",
+"#7C1C24",
+"#885E14",
+"#2E8415",
+"#134E52",
+"#521C4F",
+"#893615",
+"#808514",
+"#483AE4",
+"#EA3443",
+"#FFB227",
+"#56F827",
+"#23939B",
+"#9B3595",
+"#FF6527",
+"#F0FA26",
+"#484848",
+"#A79DF2",
+"#F69BA4",
+"#FFD998",
+"#AEFB98",
+"#97CACE",
+"#CE9CCB",
+"#FFB398",
+"#F9FC98",
+"#C5C4C5",
+"#261F79",
+"#7C1C24",
+"#885E14",
+"#2E8415",
+"#134E52"
+);
+
 
 var loadedSerumPotency = 0;
 var loadedVirusAvidity = 1;
@@ -1253,6 +1682,172 @@ function readMdsLog(MdsLog_str){
 	}
 	
 }
+
+
+var load_ddCRPLog = 0;
+var ddCRPLogData;
+function read_ddCRP_log(ddCRPLog_str){
+	load_ddCRPLog = 1;
+	ddCRPLogData = CSVToArray( ddCRPLog_str , "\t");
+	var numSamplesThisFile = ddCRPLogData.length - 1;
+
+	if(isNaN(numSamples)){
+		numSamples = numSamplesThisFile;
+	}	
+	else{
+		if(numSamplesThisFile != numSamples){
+			alert("Error. The number of samples was previously specified to be "+ numSamples + ", but this files likely contains " + numSamplesThisFile + " samples.\n");
+		}
+	}
+	
+	//change color.
+	
+ 
+ 
+ 
+ //var colorCluster = new Array("#FF0000", "#3366FF", "#33CC33", "#FF9900", "#996633", "#666699");
+ //color the clades
+ for(var c=0; c< numViruses; c++){
+ 	circle[c].toFront();
+ 	//circle[c].attr({stroke:colorCluster[ddCRPLogData[2][c+2]], fill: colorCluster[ddCRPLogData[2][c+2]]});
+ 	//circle[c].attr({fill: colorCluster[ddCRPLogData[2][c+2]]});
+ 	circle[c].attr({stroke: colorClusterStroke[ parseInt(ddCRPLogData[numSamples][c+2])], fill: colorCluster[ parseInt(ddCRPLogData[numSamples][c+2])]});
+ }
+ 
+	isCircleColorAnnotated = 1;
+	
+}
+
+
+
+var load_cluster_path = 0;
+var clusterPathData;
+var cluster_centroid_x ;
+var cluster_centroid_y ;
+var num_clusters;
+var clusterPathLine;
+function read_path(path_str){
+
+ if(load_ddCRPLog == 0){
+ 	alert("Need to load the ddCRP file first");
+ }
+ 	clusterPathData = CSVToArray( path_str , "\t");
+	var numSamplesThisFile = clusterPathData.length - 1;
+	load_cluster_path = 1;
+
+	if(isNaN(numSamples)){
+		numSamples = numSamplesThisFile;
+	}	
+	else{
+		if(numSamplesThisFile != numSamples){
+			alert("Error. The number of samples was previously specified to be "+ numSamples + ", but this files likely contains " + numSamplesThisFile + " samples.\n");
+		}
+	}
+	
+	//var c=0;
+	//alert(numSamples);
+	//alert(parseInt(ddCRPLogData[numSamples][c+2]));
+	
+	
+	//put viruses into string lists
+	var cluster_members = new Array();
+	for(var i=0; i< numViruses; i++){
+		cluster_members[i] = "";	
+	}
+	
+	for(var c=0; c< numViruses; c++){
+		cluster_members[ parseInt(ddCRPLogData[numSamples][c+2]) ] = cluster_members[ parseInt(ddCRPLogData[numSamples][c+2]) ] +  c + "\t" ; 
+	}
+	
+	//alert(cluster_members[0]);
+
+	num_clusters = 0;
+	var clusterLabel = new Array();
+	cluster_centroid_x = new Array();
+	cluster_centroid_y = new Array();
+	
+	
+	//calculate cluster mean in each cluster
+	for(var c=0; c< numViruses; c++){
+ 		if( cluster_members[c] != ""){
+ 			clusterLabel[num_clusters] = c;
+ 			num_clusters++;			
+ 		} 
+ 	}
+ 	//alert(clusterLabel);
+ 	for(var c=0; c< num_clusters; c++){
+ 		cluster_centroid_x[c] = 0;
+ 		cluster_centroid_y[c] = 0;
+ 	}
+
+	for(var c=0; c< num_clusters; c++){ 
+		//alert(cluster_members[ clusterLabel[c] ]);
+ 		var members = CSVToArray( cluster_members[ clusterLabel[c] ] , "\t");
+ 		var numElements = members[0].length - 1;
+ 		for(var j=0; j < numElements; j++){
+ 			var virusIndex = parseInt(members[0][j]);
+ 			//alert(virusIndex);
+ 			cluster_centroid_x[c] += circle[virusIndex].attr('cx');
+ 			cluster_centroid_y[c] += circle[virusIndex].attr('cy');
+ 		}
+ 		cluster_centroid_x[c] = cluster_centroid_x[c]/numElements;
+ 		cluster_centroid_y[c] = cluster_centroid_y[c]/numElements; 
+	}
+
+	
+	for(var c=0; c<num_clusters; c++){
+		//alert(cluster_centroid_x[c]);
+		//alert(cluster_centroid_y[c]);
+		//paper.circle( cluster_centroid_x[c], cluster_centroid_y[c], 10).attr({ stroke: '#3D6AA2'});
+	}
+	
+	/*
+	clusterPathLine = new Array();
+	//connect the paths
+	for(var c=1; c<num_clusters; c++){
+		var c2 = parseInt(clusterPathData[numSamples][c+1]);
+		//alert(c + " and " + c2);
+		clusterPathLine[c] = paper.path("M " + cluster_centroid_x[c] + " " + cluster_centroid_y[c] + " L " + cluster_centroid_x[c2] + " " + cluster_centroid_y[c2]).attr( {		stroke: '#3399FF',		'stroke-width':3,		'opacity': 0.8	});
+	}
+	*/
+}
+
+
+
+var load_mutations = 0;
+var mutationsData;
+var driverMutations_labels;
+function read_mutations(mutations_str){
+
+ if(load_ddCRPLog == 0){
+ 	alert("Need to load the cluster path file first");
+ }
+ 	mutationsData = CSVToArray( mutations_str , "\t");
+	var numSamplesThisFile = mutationsData.length - 1;
+	load_mutations = 1;
+
+	if(isNaN(numSamples)){
+		numSamples = numSamplesThisFile;
+	}	
+	else{
+		if(numSamplesThisFile != numSamples){
+			alert("Error. The number of samples was previously specified to be "+ numSamples + ", but this files likely contains " + numSamplesThisFile + " samples.\n");
+		}
+	}
+
+	driverMutations_labels = new Array();
+	for(var c=1; c<num_clusters; c++){
+		var c2 = parseInt(clusterPathData[numSamples][c+1]);
+		var mid_x = (cluster_centroid_x[c2] +cluster_centroid_x[c])/2 ;  
+		var mid_y = (cluster_centroid_y[c2] +cluster_centroid_y[c])/2;
+		driverMutations_labels[c] = paper.text(mid_x, mid_y, (parseInt(mutationsData[numSamples][c+1])+"")).attr({ 'font-size': 12, fill: '#000000', cursor: 'pointer' });
+	}
+	
+}
+
+
+
+
 
 var serumPotencyData;
 function readSerumPotency(serumPotency_str){
@@ -1340,14 +1935,14 @@ for(var v=0; v < virusName.length; v++){
  //var cladeColor
  
  
- var colorCluster = new Array("#171E24","#3A7295", "#0B5A9F", "#ED68C5","#C02900", "#7FAD6C", "#025A1E", "#1D7332", "#329135", 
-"#F77565", "#CB301C", "#841410", "#BC1711", "#B0B02E", "#6C5BC5", "#306877", "#F95A23", "#83AE69");
+// var colorCluster = new Array("#171E24","#3A7295", "#0B5A9F", "#ED68C5","#C02900", "#7FAD6C", "#025A1E", "#1D7332", "#329135", 
+//"#F77565", "#CB301C", "#841410", "#BC1711", "#B0B02E", "#6C5BC5", "#306877", "#F95A23", "#83AE69");
 
  
  //color the clades
  for(var c=0; c< numViruses; c++){
  	circle[c].toFront();
- 	circle[c].attr({stroke:colorCluster[cluster_assignment[matchIndexes[c]]], fill: colorCluster[cluster_assignment[matchIndexes[c]]]});
+ 	circle[c].attr({stroke:colorClusterStroke[cluster_assignment[matchIndexes[c]]], fill: colorCluster[cluster_assignment[matchIndexes[c]]]});
  }
  
  
@@ -1557,6 +2152,7 @@ m_x = new Array(numSamples);
 m_y = new Array(numSamples);
 
 
+
  //align
  
  if(isAlign){
@@ -1592,6 +2188,8 @@ m_y = new Array(numSamples);
   }//isAlign
 
 
+ currentSample = numSamples - 1;
+
 //reference is the last line of the data
  //score:
 if(isRotate | isFlip){
@@ -1611,7 +2209,6 @@ for(var i=0; i < data.length; i++){
   theta_samples = new Array(numSamples);
   flip_samples = new Array(numSamples);
  
- currentSample = numSamples - 1;
  var ref_index = currentSample + 1;
  
  theta_samples[currentSample] = 0;  //last line is the reference 
@@ -1635,7 +2232,6 @@ for(var i=0; i < data.length; i++){
 	min_score = score;
 //alert(min_score);
  
-
 for(var flip = 0; flip <=isFlip; flip++){
 
 
@@ -1651,7 +2247,8 @@ for(var flip = 0; flip <=isFlip; flip++){
 	}
   }
 	
-   if(isRotate){	
+   if(isRotate){
+   		
 	var top =0;
 	var bottom = 0;
 	for(var i=0; i < numViruses; i++){
@@ -1691,6 +2288,8 @@ for(var flip = 0; flip <=isFlip; flip++){
 
 }
 
+
+
 //var xyz = -min_theta*180/Math.PI;
 //var str = "min_theta" + xyz + " score=" + min_score;
 
@@ -1701,6 +2300,7 @@ for(var flip = 0; flip <=isFlip; flip++){
 
 theta_samples[k-1] = -min_theta;  //not sure why I need that negative, but it seems that the solution needs to be flipped. I think it is the counterclockwise vs. clockwise thing.
 flip_samples[k-1] = min_hasFlipped; 
+
 
 
 //Apply transformation
@@ -1731,8 +2331,6 @@ flip_samples[k-1] = min_hasFlipped;
 else{
 	//no rotation and no flip
 }
-
-
 
 	//plot the last iteration
 	if (readDataType == 1) {
@@ -1793,6 +2391,15 @@ else{
 		y_min = findMin(y_coord);	
 	}
 
+
+alert("Customized range 2");
+x_min = x_min - 15;
+//y_min = y_min - 10;
+//y_max = y_max + 20;
+//x_max = x_max + 20;
+//doesn't look like changing the max would have any effect..
+
+
 	//alert(x_coord);
 
 	//alert("hi");	
@@ -1821,7 +2428,6 @@ var x_or_y_range_bigger = 0;
 if(y_range > x_range){
 	x_or_y_range_bigger = 1;  //range of y is bigger
 }
-
 
 
 //var x_off = -(x_min);
@@ -1860,6 +2466,9 @@ var yposStart = (Math.min(Math.ceil(y_min/interval_size_y), Math.floor(y_min/int
 
 var xposEnd = (Math.max(Math.ceil(x_max/interval_size_x), Math.floor(x_max/interval_size_x))*interval_size_x); //coz it may be a negative number
 var yposEnd = (Math.max(Math.ceil(y_max/interval_size_y), Math.floor(y_max/interval_size_y))*interval_size_y); //coz it may be a negative number
+
+//customized range:
+yposEnd = yposEnd +5;
 
 //var xposStart =  Math.floor(x_min) -2;
 //var yposStart =  Math.floor(y_min) -2;
@@ -2513,7 +3122,45 @@ if (readDataType == 1) {
 	});	
 
 
-mds_log_fileInput
+//mds_log_fileInput
+
+	var ddCRP_log_fileInput = document.getElementById('ddCRP_log_fileInput');
+	ddCRP_log_fileInput.addEventListener('change', function(e){
+		var ddCRP_log_file = ddCRP_log_fileInput.files[0];
+		var ddCRP_log_fileInput_reader = new FileReader();
+		ddCRP_log_fileInput_reader.onload = function(e){
+			read_ddCRP_log(trimHeadAndBottom(ddCRP_log_fileInput_reader.result));
+		}
+		ddCRP_log_fileInput_reader.readAsText(ddCRP_log_file);
+	});	
+
+
+
+
+//assignment fileinput
+
+	var path_fileInput = document.getElementById('path_fileInput');
+	path_fileInput.addEventListener('change', function(e){
+		var path_file = path_fileInput.files[0];
+		var path_fileInput_reader = new FileReader();
+		path_fileInput_reader.onload = function(e){
+			read_path(trimHeadAndBottom(path_fileInput_reader.result));
+		}
+		path_fileInput_reader.readAsText(path_file);
+	});	
+	
+//mutation fileinput
+
+	var mutations_fileInput = document.getElementById('mutations_fileInput');
+	mutations_fileInput.addEventListener('change', function(e){
+		var mutations_file = mutations_fileInput.files[0];
+		var mutations_fileInput_reader = new FileReader();
+		mutations_fileInput_reader.onload = function(e){
+			read_mutations(trimHeadAndBottom(mutations_fileInput_reader.result));
+		}
+		mutations_fileInput_reader.readAsText(mutations_file);
+	});		
+
 
 //Create SVG Image
 document.getElementById("createImage").onclick = function() {
